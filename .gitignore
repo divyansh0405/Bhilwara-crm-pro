@@ -21,3 +21,5 @@ build/
 # Test files
 test-*.html
 test-*.js
+
+.vercel
