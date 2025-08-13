@@ -634,7 +634,7 @@ const CombinedBillingModule: React.FC = () => {
             <div class="logo-section">
               <img 
                 src="/logo.png" 
-                alt="VALANT Hospital Logo" 
+                alt="VALANT HOSPITAL BHILWARA Logo" 
                 class="logo"
               />
             </div>
@@ -756,7 +756,7 @@ const CombinedBillingModule: React.FC = () => {
 
           <!-- Footer -->
           <div class="footer">
-            <p><strong>Thank you for choosing VALANT Hospital</strong></p>
+            <p><strong>Thank you for choosing VALANT HOSPITAL BHILWARA</strong></p>
             <p>A unit of Neuorth Medicare Pvt Ltd</p>
             <p style="font-weight: bold; margin-top: 8px;">** ORIGINAL COPY **</p>
             <p style="margin-top: 4px;">This is a computer generated report • Generated on ${currentDate} at ${currentTime}</p>

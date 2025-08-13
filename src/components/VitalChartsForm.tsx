@@ -143,7 +143,7 @@ const VitalChartsForm: React.FC<VitalChartsFormProps> = ({
 </head>
 <body>
   <div class="print-header">
-    <h1>VALANT HOSPITAL</h1>
+    <h1>VALANT HOSPITAL BHILWARA</h1>
     <p>A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
     <h2>VITAL CHARTS (CLINICAL CHART)</h2>
     <p>Patient: ${patient.first_name} ${patient.last_name} | Bed: ${bedNumber}</p>

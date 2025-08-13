@@ -489,7 +489,7 @@ const App: React.FC = () => {
       
       const backupData = {
         backup_info: {
-          hospital_name: 'VALANT HOSPITAL',
+          hospital_name: 'VALANT HOSPITAL BHILWARA',
           backup_date: new Date().toISOString(),
           backup_by: currentUser?.email || 'Unknown',
           backup_version: '2.0',
@@ -681,7 +681,7 @@ const App: React.FC = () => {
       
       const exportDataObject: any = {
         export_info: {
-          hospital_name: 'VALANT HOSPITAL',
+          hospital_name: 'VALANT HOSPITAL BHILWARA',
           exported_at: new Date().toISOString(),
           exported_by: currentUser?.email || 'Unknown'
         }
@@ -764,7 +764,7 @@ const App: React.FC = () => {
         mimeType = 'application/json';
       } else {
         // CSV format with real data
-        let csvContent = 'VALANT HOSPITAL DATA EXPORT\n';
+        let csvContent = 'VALANT HOSPITAL BHILWARA DATA EXPORT\n';
         csvContent += `Exported on: ${new Date().toLocaleString()}\n\n`;
         
         if (exportData.patients && exportDataObject.patients?.data?.length > 0) {
@@ -1043,12 +1043,12 @@ const App: React.FC = () => {
               {/* Logo */}
               <img 
                 src="/logo.png" 
-                alt="VALANT HOSPITAL" 
+                alt="VALANT HOSPITAL BHILWARA" 
                 className="h-12 w-12 object-contain"
               />
               {/* Hospital Name */}
               <div>
-                <h1 className="text-xl font-bold text-blue-900">VALANT HOSPITAL</h1>
+                <h1 className="text-xl font-bold text-blue-900">VALANT HOSPITAL BHILWARA</h1>
                 <p className="text-xs text-gray-500">
                   Hospital Management System
                 </p>

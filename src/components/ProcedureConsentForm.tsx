@@ -407,7 +407,7 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
             <!-- Header -->
             <div class="header">
               <h1>PROCEDURE CONSENT</h1>
-              <h2>VALANT HOSPITAL</h2>
+              <h2>VALANT HOSPITAL BHILWARA</h2>
               <p>10, Madhav Vihar, Shobhagpura, Udaipur</p>
               <p>+91-911911 8000</p>
             </div>
@@ -664,7 +664,7 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
           {/* Header Section */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">PROCEDURE CONSENT</h1>
-            <h2 className="text-2xl font-semibold text-blue-700 mb-1">VALANT HOSPITAL</h2>
+            <h2 className="text-2xl font-semibold text-blue-700 mb-1">VALANT HOSPITAL BHILWARA</h2>
             <p className="text-gray-600">10, Madhav Vihar, Shobhagpura, Udaipur</p>
             <p className="text-gray-600">+91-911911 8000</p>
           </div>

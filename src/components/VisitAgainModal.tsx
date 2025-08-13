@@ -226,7 +226,7 @@ const VisitAgainModal: React.FC<VisitAgainModalProps> = ({ patient, onClose, onV
       date: visitDate.toLocaleDateString('en-IN'),
       time: visitDate.toLocaleTimeString('en-IN'),
       hospital: {
-        name: 'VALANT Hospital',
+        name: 'VALANT HOSPITAL BHILWARA',
         address: 'Near Railway Station, Dahod, Gujarat - 389151',
         phone: '+91 2673 245678',
         email: 'info@valanthospital.com',

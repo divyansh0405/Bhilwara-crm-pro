@@ -408,7 +408,7 @@ const IPDBillingModule: React.FC = () => {
       time: new Date().toLocaleTimeString('en-IN'),
       
       hospital: {
-        name: 'VALANT HOSPITAL',
+        name: 'VALANT HOSPITAL BHILWARA',
         address: 'Madhuban, Siwan, Bihar',
         phone: '+91 99999 99999',
         email: 'info@valanthospital.com',

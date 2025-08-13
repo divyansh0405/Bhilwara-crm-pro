@@ -411,7 +411,7 @@ const Receipt: React.FC<ReceiptProps> = ({ patientId, onClose }) => {
             <div className="flex items-center justify-center mb-4">
               <img 
                 src="/logo.png" 
-                alt="VALANT Hospital Logo" 
+                alt="VALANT HOSPITAL BHILWARA Logo" 
                 className="h-16 w-auto"
                 style={{ maxHeight: '64px', height: 'auto', width: 'auto' }}
               />
@@ -549,7 +549,7 @@ const Receipt: React.FC<ReceiptProps> = ({ patientId, onClose }) => {
 
           {/* Footer */}
           <div className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
-            <p>Thank you for choosing VALANT HOSPITAL</p>
+            <p>Thank you for choosing VALANT HOSPITAL BHILWARA</p>
             <p className="mt-1">A unit of Neuorth Medicare Pvt Ltd</p>
             <p className="font-bold mt-2">** ORIGINAL COPY **</p>
           </div>

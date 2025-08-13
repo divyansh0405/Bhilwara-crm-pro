@@ -281,7 +281,7 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
   const generateFormHTML = () => {
     return `
       <div class="header">
-        <div class="hospital-name">VALANT HOSPITAL</div>
+        <div class="hospital-name">VALANT HOSPITAL BHILWARA</div>
         <div class="hospital-address">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</div>
         <div class="form-title">PROCEDURE CONSENT FORM</div>
       </div>
@@ -500,7 +500,7 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
       <div className="print-content">
         {/* Header */}
         <div className="print-header text-center mb-8">
-          <h1 className="text-2xl font-bold mb-2">VALANT HOSPITAL</h1>
+          <h1 className="text-2xl font-bold mb-2">VALANT HOSPITAL BHILWARA</h1>
           <p className="text-sm mb-2">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
           <h2 className="text-xl font-semibold">PROCEDURE CONSENT FORM</h2>
         </div>

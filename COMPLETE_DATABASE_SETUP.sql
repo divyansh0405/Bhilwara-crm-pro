@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS hospitals (
 INSERT INTO hospitals (id, name, address, phone, email, registration_number, gst_number)
 VALUES (
     '550e8400-e29b-41d4-a716-446655440000',
-    'VALANT Hospital',
+    'VALANT HOSPITAL BHILWARA',
     '123 Medical Street, City',
     '555-0100',
     'info@valanthospital.com',

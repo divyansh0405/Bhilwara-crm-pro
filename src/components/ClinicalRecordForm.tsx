@@ -418,7 +418,7 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
       <div class="page-1-content">
         <!-- First Page Header -->
         <div class="page-1-header">
-          <h1>VALANT HOSPITAL</h1>
+          <h1>VALANT HOSPITAL BHILWARA</h1>
           <p>A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
           <h2>CLINICAL RECORD</h2>
         </div>
@@ -479,7 +479,7 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
       <!-- PAGE 2: CLINICAL RECORD (Cont.) -->
       <!-- Second Page Header -->
       <div class="page-2-header">
-        <h1>VALANT HOSPITAL</h1>
+        <h1>VALANT HOSPITAL BHILWARA</h1>
         <p>A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
         <h2>CLINICAL RECORD (Cont.)</h2>
       </div>
@@ -620,7 +620,7 @@ const ClinicalRecordForm: React.FC<ClinicalRecordFormProps> = ({
         <div className="p-6">
           {/* Header Section */}
           <div className="text-center border-b-2 border-gray-300 pb-6 mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">VALANT HOSPITAL</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">VALANT HOSPITAL BHILWARA</h1>
             <p className="text-gray-600 text-sm mb-4">
               A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000
             </p>

@@ -86,7 +86,7 @@ const TestDischargePrint: React.FC = () => {
         date: new Date().toLocaleDateString(),
         time: new Date().toLocaleTimeString(),
         hospital: {
-          name: "VALANT Hospital",
+          name: "VALANT HOSPITAL BHILWARA",
           address: "Test Address",
           phone: "Test Phone",
           email: "test@hospital.com",
