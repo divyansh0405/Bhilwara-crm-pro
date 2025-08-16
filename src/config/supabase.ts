@@ -1,12 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+// Supabase configuration with fallback for production
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hgwomxpzaeeqgxsnhceq.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd29teHB6YWVlcWd4c25oY2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDEwNDEsImV4cCI6MjA3MDY3NzA0MX0.Eeucjix4oV-mGVcIuOXgfFGGVXjsXZj2-oA8ify2O0g';
 
 if (!supabaseUrl || !supabaseAnonKey) {
+  console.error('❌ Missing Supabase environment variables');
   throw new Error('Missing Supabase environment variables');
 }
+
+console.log('✅ Supabase config loaded:', { 
+  url: supabaseUrl, 
+  hasKey: !!supabaseAnonKey,
+  keyLength: supabaseAnonKey?.length 
+});
 
 // Create Supabase client
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
