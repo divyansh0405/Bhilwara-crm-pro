@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration with environment variable support
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hgwomxpzaeeqgxsnhceq.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd29teHB6YWVlcWd4c25oY2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDEwNDEsImV4cCI6MjA3MDY3NzA0MX0.Eeucjix4oV-mGVcIuOXgfFGGVXjsXZj2-oA8ify2O0g';
+// Direct Supabase configuration for production reliability
+const supabaseUrl = 'https://hgwomxpzaeeqgxsnhceq.supabase.co';
+const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhnd29teHB6YWVlcWd4c25oY2VxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUxMDEwNDEsImV4cCI6MjA3MDY3NzA0MX0.Eeucjix4oV-mGVcIuOXgfFGGVXjsXZj2-oA8ify2O0g';
 
 if (!supabaseUrl || !supabaseAnonKey) {
   console.error('❌ Missing Supabase environment variables', {
@@ -18,35 +18,33 @@ console.log('✅ Supabase config loaded:', {
   url: supabaseUrl, 
   hasKey: !!supabaseAnonKey,
   keyLength: supabaseAnonKey?.length,
+  keyStart: supabaseAnonKey?.substring(0, 20) + '...',
   env: import.meta.env.MODE,
-  isProduction: import.meta.env.PROD
+  isProduction: import.meta.env.PROD,
+  allEnvKeys: Object.keys(import.meta.env)
 });
 
-// Create Supabase client with production-ready config
+// Create Supabase client with minimal, working config
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit',
-  },
-  global: {
-    headers: {
-      'apikey': supabaseAnonKey,
-      'Authorization': `Bearer ${supabaseAnonKey}`,
-      'Content-Type': 'application/json',
-      'Prefer': 'return=minimal',
-    },
-  },
-  db: {
-    schema: 'public',
-  },
-  realtime: {
-    params: {
-      eventsPerSecond: 10,
-    },
   },
 });
+
+// Test connection in production
+if (typeof window !== 'undefined') {
+  supabase.from('patients').select('count', { count: 'exact', head: true })
+    .then(({ error, count }) => {
+      if (error) {
+        console.error('🚨 Supabase connection test failed:', error);
+      } else {
+        console.log('✅ Supabase connection test successful, patient count:', count);
+      }
+    })
+    .catch(err => console.error('🚨 Supabase connection test error:', err));
+}
 
 // Database Types (matching Supabase schema)
 export interface User {
