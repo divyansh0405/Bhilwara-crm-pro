@@ -143,7 +143,6 @@ export const createMutationOptions = <TData, TVariables>(
         
         // Return a context object with the snapshotted value
         return { previousData };
-        return { previousData };
       }
     },
     onError: (err: any, variables: TVariables, context: any) => {
