@@ -1,7 +1,33 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 import { exportToExcel, formatCurrency, formatDateTime } from '../utils/excelExport';
+import ModernDatePicker from './ui/ModernDatePicker';
+
+// Function to convert UTC database time to actual local system time
+const formatLocalTime = (dateTime: Date | string): string => {
+  try {
+    const validDateTime = dateTime instanceof Date ? dateTime : new Date(dateTime);
+    
+    if (isNaN(validDateTime.getTime())) {
+      return 'Invalid Time';
+    }
+    
+    // Manual conversion: UTC time + local timezone offset
+    const utcTime = validDateTime.getTime();
+    const localTimezoneOffset = new Date().getTimezoneOffset() * 60 * 1000; // Convert minutes to milliseconds
+    const localTime = new Date(utcTime - localTimezoneOffset); // Subtract because getTimezoneOffset returns negative for positive timezones
+    
+    return localTime.toLocaleTimeString([], {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+  } catch (error) {
+    console.error('Time formatting error:', error);
+    return 'Time Error';
+  }
+};
 
 interface LedgerEntry {
   id: string;
@@ -17,6 +43,10 @@ interface LedgerEntry {
   payment_mode: 'CASH' | 'ONLINE';
   patient_name?: string;
   patient_id?: string;
+  patient_age?: string;
+  patient_gender?: string;
+  consultant_name?: string;
+  department?: string;
   patient_tag?: string;
   reference_id?: string;
   created_at: string;
@@ -25,11 +55,7 @@ interface LedgerEntry {
 const OperationsLedger: React.FC = () => {
   const [entries, setEntries] = useState<LedgerEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [dateFrom, setDateFrom] = useState(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30); // Start from 30 days ago
-    return date.toISOString().split('T')[0];
-  });
+  const [dateFrom, setDateFrom] = useState(new Date().toISOString().split('T')[0]); // Default to today
   const [dateTo, setDateTo] = useState(new Date().toISOString().split('T')[0]);
   const [filterPaymentMode, setFilterPaymentMode] = useState<'all' | 'CASH' | 'ONLINE'>('all');
   const [filterType, setFilterType] = useState<'all' | 'REVENUE' | 'EXPENSE' | 'REFUND'>('all');
@@ -42,10 +68,16 @@ const OperationsLedger: React.FC = () => {
 
   const loadLedgerEntries = async () => {
     setLoading(true);
+    
+    // 🔄 CRITICAL: Clear any cached data
+    console.log('🔄 Reloading operations ledger with fresh data...');
+    console.log('📅 Date range for query:', { dateFrom, dateTo });
+    
     try {
       const allEntries: LedgerEntry[] = [];
       
-      // Load patient transactions (revenue)
+      // CRITICAL FIX: Load patient transactions with flexible date filtering
+      // Many transactions may have NULL transaction_date, so we need a more inclusive query
       const { data: transactions, error: transError } = await supabase
         .from('patient_transactions')
         .select(`
@@ -53,21 +85,31 @@ const OperationsLedger: React.FC = () => {
           amount,
           payment_mode,
           transaction_type,
+          transaction_date,
           description,
           doctor_name,
           status,
           created_at,
-          patient:patients(id, patient_id, first_name, last_name, age, patient_tag)
+          patient:patients(id, patient_id, first_name, last_name, age, gender, patient_tag, assigned_doctor, assigned_department, date_of_entry)
         `)
-        .gte('created_at', `${dateFrom}T00:00:00`)
-        .lte('created_at', `${dateTo}T23:59:59`)
         .eq('status', 'COMPLETED')
         .order('created_at', { ascending: false });
 
       if (transError) {
         console.error('Error loading transactions:', transError);
       } else if (transactions) {
+        console.log(`📊 Retrieved ${transactions.length} transactions, now filtering by date range ${dateFrom} to ${dateTo}`);
+        
         transactions.forEach((trans: any) => {
+          // FILTER: Skip only DR HEMANT with ORTHO department (not DR HEMANT KHAJJA with ORTHOPAEDIC)
+          const filterDoctorName = trans.patient?.assigned_doctor?.toUpperCase() || '';
+          const filterDepartment = trans.patient?.assigned_department?.toUpperCase() || '';
+          
+          // Skip only if it's specifically DR HEMANT (not KHAJJA) with ORTHO department
+          if (filterDepartment === 'ORTHO' && filterDoctorName === 'DR HEMANT') {
+            return; // Skip this specific combination
+          }
+          
           let cleanDescription = trans.description || `${trans.transaction_type} Payment`;
           let originalAmount = trans.amount;
           let discountAmount = 0;
@@ -97,36 +139,136 @@ const OperationsLedger: React.FC = () => {
             cleanDescription = cleanDescription.replace(/\s*\|\s*Original:.*?Net:\s*₹[\d,]+(?:\.\d{2})?/, '');
           }
           
+          // Extract consultant name and department
+          let consultantName = '';
+          let department = '';
+          
           // If it's a consultation, ensure proper doctor name format
           if (trans.transaction_type === 'consultation') {
             // Extract doctor name from description if present
             const doctorMatch = cleanDescription.match(/Consultation Fee - (.+?)(?:\s*-\s*Patient Age|$)/);
             if (doctorMatch) {
-              cleanDescription = `Consultation Fee - ${doctorMatch[1]}`;
+              consultantName = doctorMatch[1];
+              cleanDescription = `Consultation Fee - ${consultantName}`;
             } else if (trans.doctor_name) {
-              cleanDescription = `Consultation Fee - ${trans.doctor_name.toUpperCase()}`;
+              consultantName = trans.doctor_name.toUpperCase();
+              cleanDescription = `Consultation Fee - ${consultantName}`;
+            } else if (trans.patient?.assigned_doctor) {
+              consultantName = trans.patient.assigned_doctor;
+              cleanDescription = `Consultation Fee - ${consultantName}`;
             }
+          } else if (trans.patient?.assigned_doctor) {
+            consultantName = trans.patient.assigned_doctor;
           }
           
-          // Add patient age to description
+          // Get department from patient's assigned department
+          if (trans.patient?.assigned_department) {
+            department = trans.patient.assigned_department;
+          }
+          
+          // Add patient age to description (keep for backward compatibility)
           if (trans.patient?.age) {
             cleanDescription += ` - Patient Age: ${trans.patient.age} years`;
           }
           
+          // CRITICAL FIX: Always prioritize transaction_date (this is the service date selected by user)
+          let effectiveDate = new Date();
+          let effectiveDateStr = '';
+          let transactionDateTime = new Date(trans.created_at); // Use created_at for time display
+          
+          // Debug logging for date issues
+          console.log('📅 OPERATIONS DATE DEBUG:', {
+            transaction_id: trans.id,
+            transaction_date: trans.transaction_date,
+            transaction_date_type: typeof trans.transaction_date,
+            patient_date_of_entry: trans.patient?.date_of_entry,
+            created_at: trans.created_at,
+            description: trans.description?.substring(0, 50),
+            patient_name: `${trans.patient?.first_name} ${trans.patient?.last_name}`
+          });
+          
+          if (trans.transaction_date && trans.transaction_date.trim() !== '') {
+            // PRIORITY 1: Use transaction_date (this is the service date selected by user in PatientServiceManager)
+            effectiveDateStr = trans.transaction_date.includes('T') 
+              ? trans.transaction_date.split('T')[0] 
+              : trans.transaction_date;
+            // 🔥 CRITICAL FIX: Parse date correctly to avoid month/day swapping
+            const dateParts = effectiveDateStr.split('-'); // ['2025', '08', '14']
+            effectiveDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])); // Month is 0-based
+            console.log('✅ Using transaction_date:', effectiveDateStr, '→', effectiveDate.toLocaleDateString());
+          } else if (trans.patient?.date_of_entry && trans.patient.date_of_entry.trim() !== '') {
+            // PRIORITY 2: Fallback to patient's date_of_entry
+            effectiveDateStr = trans.patient.date_of_entry.includes('T') 
+              ? trans.patient.date_of_entry.split('T')[0] 
+              : trans.patient.date_of_entry;
+            // 🔥 CRITICAL FIX: Parse date correctly to avoid month/day swapping
+            const dateParts = effectiveDateStr.split('-'); // ['2025', '08', '14']
+            effectiveDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2])); // Month is 0-based
+            console.log('⚠️ Falling back to patient date_of_entry:', effectiveDateStr, '→', effectiveDate.toLocaleDateString());
+          } else {
+            // PRIORITY 3: Final fallback to created_at
+            effectiveDate = new Date(trans.created_at);
+            effectiveDateStr = trans.created_at.split('T')[0];
+            console.log('⚠️ Falling back to created_at:', effectiveDateStr, '→', effectiveDate.toLocaleDateString());
+          }
+          
+          // CLIENT-SIDE DATE FILTERING: Now check if this transaction falls within the selected date range
+          if (effectiveDateStr < dateFrom || effectiveDateStr > dateTo) {
+            console.log(`❌ Transaction ${trans.id} outside date range: ${effectiveDateStr} not in ${dateFrom}-${dateTo}`);
+            return; // Skip this transaction
+          }
+          
+          console.log(`✅ Transaction ${trans.id} within date range: ${effectiveDateStr} in ${dateFrom}-${dateTo}`);
+          
+          // 🔍 DEBUG DATE FORMATTING ISSUE
+          console.log('🔍 DATE FORMATTING DEBUG:', {
+            transaction_id: trans.id,
+            effectiveDateStr: effectiveDateStr,
+            effectiveDate: effectiveDate.toISOString(),
+            effectiveDateLocal: effectiveDate.toString(),
+            willFormat: 'DD/MM/YYYY using en-IN locale'
+          });
+          
+          // 🔥 CRITICAL FIX: Format date manually to avoid locale issues
+          const day = effectiveDate.getDate().toString().padStart(2, '0');
+          const month = (effectiveDate.getMonth() + 1).toString().padStart(2, '0'); // Month is 0-based
+          const year = effectiveDate.getFullYear();
+          const istDate = `${day}/${month}/${year}`;
+          
+          // 🔍 DEBUG FORMATTED DATE
+          console.log('🔍 FORMATTED DATE RESULT:', {
+            transaction_id: trans.id,
+            originalStr: effectiveDateStr,
+            formattedDate: istDate,
+            expectedFormat: 'DD/MM/YYYY'
+          });
+          
+          // Convert UTC database time to local time
+          const localTime = formatLocalTime(transactionDateTime);
+          
+          // CRITICAL FIX: Identify refunds (negative amount transactions)
+          const isRefund = trans.amount < 0;
+          const entryType = isRefund ? 'REFUND' : 'REVENUE';
+          const displayAmount = Math.abs(trans.amount); // Always show positive amount for display
+          
           allEntries.push({
             id: trans.id,
-            date: new Date(trans.created_at).toLocaleDateString(),
-            time: new Date(trans.created_at).toLocaleTimeString(),
-            type: 'REVENUE',
-            category: trans.transaction_type,
+            date: istDate,
+            time: localTime,
+            type: entryType,
+            category: isRefund ? 'REFUND' : trans.transaction_type,
             description: cleanDescription,
-            amount: trans.amount,
-            original_amount: originalAmount,
+            amount: displayAmount,
+            original_amount: Math.abs(originalAmount),
             discount_amount: discountAmount,
-            net_amount: netAmount,
+            net_amount: Math.abs(netAmount),
             payment_mode: trans.payment_mode || 'CASH',
             patient_name: trans.patient ? `${trans.patient.first_name} ${trans.patient.last_name}` : 'Unknown',
             patient_id: trans.patient?.patient_id,
+            patient_age: trans.patient?.age || '',
+            patient_gender: trans.patient?.gender || '',
+            consultant_name: consultantName,
+            department: department,
             patient_tag: trans.patient?.patient_tag || '',
             reference_id: trans.id,
             created_at: trans.created_at
@@ -146,10 +288,24 @@ const OperationsLedger: React.FC = () => {
         console.error('Error loading expenses:', expError);
       } else if (expenses) {
         expenses.forEach((expense: any) => {
+          // CRITICAL FIX: Format expenses date and time in IST 12-hour format
+          const expenseDate = new Date(expense.expense_date);
+          const expenseDateTime = new Date(expense.created_at);
+          
+          const istDate = expenseDate.toLocaleDateString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
+            month: '2-digit', 
+            year: 'numeric'
+          });
+          
+          // Convert UTC database time to local time
+          const localTime = formatLocalTime(expenseDateTime);
+          
           allEntries.push({
             id: expense.id,
-            date: new Date(expense.expense_date).toLocaleDateString(),
-            time: new Date(expense.created_at).toLocaleTimeString(),
+            date: istDate,
+            time: localTime,
             type: 'EXPENSE',
             category: expense.expense_category,
             description: expense.description,
@@ -167,7 +323,10 @@ const OperationsLedger: React.FC = () => {
       try {
         const { data: refundData, error: refundError } = await supabase
           .from('patient_refunds')
-          .select('*')
+          .select(`
+            *,
+            patient:patients(id, patient_id, first_name, last_name, age, gender, patient_tag, assigned_doctor, assigned_department, date_of_entry)
+          `)
           .eq('hospital_id', '550e8400-e29b-41d4-a716-446655440000')
           .gte('created_at', `${dateFrom}T00:00:00`)
           .lte('created_at', `${dateTo}T23:59:59`)
@@ -186,10 +345,36 @@ const OperationsLedger: React.FC = () => {
 
       if (refunds && refunds.length > 0) {
         refunds.forEach((refund: any) => {
+          // CRITICAL FIX: Use patient's date_of_entry for refunds too
+          let effectiveDate = new Date();
+          let refundDateTime = new Date(refund.created_at); // Always use refund time for time display
+          
+          if (refund.patient?.date_of_entry && refund.patient.date_of_entry.trim() !== '') {
+            // Priority 1: Patient's date_of_entry (for backdated entries)
+            const dateStr = refund.patient.date_of_entry.includes('T') 
+              ? refund.patient.date_of_entry.split('T')[0] 
+              : refund.patient.date_of_entry;
+            effectiveDate = new Date(dateStr + 'T00:00:00');
+          } else {
+            // Priority 2: Refund's created_at date (fallback)
+            effectiveDate = new Date(refund.created_at);
+          }
+          
+          // CRITICAL FIX: Format date and time in IST 12-hour format
+          const istDate = effectiveDate.toLocaleDateString('en-IN', {
+            timeZone: 'Asia/Kolkata',
+            day: '2-digit',
+            month: '2-digit', 
+            year: 'numeric'
+          });
+          
+          // Convert UTC database time to local time
+          const localTime = formatLocalTime(refundDateTime);
+          
           allEntries.push({
             id: refund.id,
-            date: new Date(refund.created_at).toLocaleDateString(),
-            time: new Date(refund.created_at).toLocaleTimeString(),
+            date: istDate,
+            time: localTime,
             type: 'REFUND',
             category: 'REFUND',
             description: refund.reason || 'Patient Refund',
@@ -197,6 +382,10 @@ const OperationsLedger: React.FC = () => {
             payment_mode: refund.payment_mode || 'CASH',
             patient_name: refund.patient ? `${refund.patient.first_name} ${refund.patient.last_name}` : 'Unknown',
             patient_id: refund.patient?.patient_id,
+            patient_age: refund.patient?.age || '',
+            patient_gender: refund.patient?.gender || '',
+            consultant_name: refund.patient?.assigned_doctor || '',
+            department: refund.patient?.assigned_department || '',
             patient_tag: refund.patient?.patient_tag || '',
             reference_id: refund.id,
             created_at: refund.created_at
@@ -322,11 +511,15 @@ const OperationsLedger: React.FC = () => {
         return {
           date: entry.date,
           time: entry.time,
+          patient_id: entry.patient_id || '',
+          patient_name: entry.patient_name || '',
+          age: entry.patient_age || '',
+          gender: entry.patient_gender || '',
+          consultant: entry.consultant_name || '',
+          department: entry.department || '',
           type: entry.type,
           category: entry.category,
           description: entry.description,
-          patient_name: entry.patient_name || '',
-          patient_id: entry.patient_id || '',
           patient_tag: entry.patient_tag || '',
           payment_mode: entry.payment_mode,
           original_amount: signedOriginalAmount,
@@ -339,12 +532,16 @@ const OperationsLedger: React.FC = () => {
         filename: `Operations_Ledger_${dateFrom}_to_${dateTo}`,
         headers: [
           'Date',
-          'Time', 
+          'Time',
+          'Patient ID',
+          'Patient Name',
+          'Age',
+          'Gender',
+          'Consultant',
+          'Department',
           'Type',
           'Category',
           'Description',
-          'Patient Name',
-          'Patient ID',
           'Patient Tag',
           'Payment Mode',
           'Original Amount',
@@ -396,26 +593,91 @@ const OperationsLedger: React.FC = () => {
         <p className="text-gray-600">Complete financial transaction history with revenue and expenses</p>
       </div>
 
+      {/* Quick Date Filters */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200 mb-4">
+        <div className="flex flex-wrap gap-2 items-center">
+          <span className="text-sm font-medium text-gray-700 mr-2">📅 Quick Filters:</span>
+          <button
+            onClick={() => {
+              const today = new Date().toISOString().split('T')[0];
+              setDateFrom(today);
+              setDateTo(today);
+            }}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+          >
+            Today
+          </button>
+          <button
+            onClick={() => {
+              const yesterday = new Date();
+              yesterday.setDate(yesterday.getDate() - 1);
+              const dateStr = yesterday.toISOString().split('T')[0];
+              setDateFrom(dateStr);
+              setDateTo(dateStr);
+            }}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+          >
+            Yesterday
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date();
+              const lastWeek = new Date();
+              lastWeek.setDate(today.getDate() - 7);
+              setDateFrom(lastWeek.toISOString().split('T')[0]);
+              setDateTo(today.toISOString().split('T')[0]);
+            }}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+          >
+            Last 7 Days
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date();
+              const lastMonth = new Date();
+              lastMonth.setDate(today.getDate() - 30);
+              setDateFrom(lastMonth.toISOString().split('T')[0]);
+              setDateTo(today.toISOString().split('T')[0]);
+            }}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+          >
+            Last 30 Days
+          </button>
+          <button
+            onClick={() => {
+              const today = new Date();
+              const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+              setDateFrom(firstDay.toISOString().split('T')[0]);
+              setDateTo(today.toISOString().split('T')[0]);
+            }}
+            className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200 transition-colors"
+          >
+            This Month
+          </button>
+        </div>
+      </div>
+
       {/* Filters */}
       <div className="bg-white p-4 rounded-lg shadow-sm border mb-6">
         <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">From Date</label>
-            <input
-              type="date"
+            <ModernDatePicker
+              label="From Date"
               value={dateFrom}
-              onChange={(e) => setDateFrom(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setDateFrom}
+              placeholder="Select start date"
+              className="w-full"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">To Date</label>
-            <input
-              type="date"
+            <ModernDatePicker
+              label="To Date"
               value={dateTo}
-              onChange={(e) => setDateTo(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={setDateTo}
+              placeholder="Select end date"
+              className="w-full"
+              minDate={dateFrom} // Ensure "to" date is not before "from" date
             />
           </div>
 
@@ -536,13 +798,17 @@ const OperationsLedger: React.FC = () => {
             <table className="w-full" style={{ tableLayout: 'fixed' }}>
               <thead className="bg-gray-50 border-b">
                 <tr>
-                  <th className="text-center p-4 font-semibold text-gray-700" style={{ width: '60px' }}>S.No</th>
-                  <th className="text-center p-4 font-semibold text-gray-700" style={{ width: '100px' }}>Date</th>
-                  <th className="text-left p-4 font-semibold text-gray-700" style={{ width: '150px' }}>Patient Name</th>
-                  <th className="text-left p-4 font-semibold text-gray-700">Description</th>
-                  <th className="text-right p-4 font-semibold text-gray-700" style={{ width: '100px' }}>Amount (₹)</th>
-                  <th className="text-right p-4 font-semibold text-gray-700" style={{ width: '100px' }}>Discount (₹)</th>
-                  <th className="text-right p-4 font-semibold text-gray-700" style={{ width: '120px' }}>Net Amount (₹)</th>
+                  <th className="text-center p-3 font-semibold text-gray-700" style={{ width: '50px' }}>S.No</th>
+                  <th className="text-center p-3 font-semibold text-gray-700" style={{ width: '90px' }}>Date & Time</th>
+                  <th className="text-center p-3 font-semibold text-gray-700" style={{ width: '80px' }}>Patient ID</th>
+                  <th className="text-left p-3 font-semibold text-gray-700" style={{ width: '120px' }}>Patient Name</th>
+                  <th className="text-center p-3 font-semibold text-gray-700" style={{ width: '80px' }}>Age & Gender</th>
+                  <th className="text-left p-3 font-semibold text-gray-700" style={{ width: '100px' }}>Consultant</th>
+                  <th className="text-left p-3 font-semibold text-gray-700" style={{ width: '90px' }}>Department</th>
+                  <th className="text-center p-3 font-semibold text-gray-700" style={{ width: '80px' }}>Type</th>
+                  <th className="text-right p-3 font-semibold text-gray-700" style={{ width: '80px' }}>Amount (₹)</th>
+                  <th className="text-right p-3 font-semibold text-gray-700" style={{ width: '70px' }}>Discount (₹)</th>
+                  <th className="text-right p-3 font-semibold text-gray-700" style={{ width: '90px' }}>Net Revenue (₹)</th>
                 </tr>
               </thead>
               <tbody>
@@ -554,38 +820,52 @@ const OperationsLedger: React.FC = () => {
                   
                   return (
                     <tr key={entry.id} className={`border-b hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-25'}`}>
-                      <td className="p-4 text-center" style={{ width: '60px' }}>
+                      <td className="p-3 text-center text-sm" style={{ width: '50px' }}>
                         {index + 1}
                       </td>
-                      <td className="p-4 text-center" style={{ width: '100px' }}>
-                        {entry.date}
+                      <td className="p-3 text-center text-xs" style={{ width: '90px' }}>
+                        <div>{entry.date}</div>
+                        <div className="text-gray-500">{entry.time}</div>
                       </td>
-                      <td className="p-4" style={{ width: '150px' }}>
-                        <div className="text-sm font-medium">{entry.patient_name || 'N/A'}</div>
-                        {entry.patient_id && (
-                          <div className="text-xs text-gray-500">ID: {entry.patient_id}</div>
-                        )}
+                      <td className="p-3 text-center text-sm font-medium" style={{ width: '80px' }}>
+                        {entry.patient_id || 'N/A'}
                       </td>
-                      <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                            entry.type === 'REVENUE' ? 'bg-green-100 text-green-800' : 
-                            entry.type === 'EXPENSE' ? 'bg-red-100 text-red-800' : 
-                            'bg-orange-100 text-orange-800'
-                          }`}>
-                            {entry.type === 'REVENUE' ? '💰' : entry.type === 'EXPENSE' ? '💸' : '↩️'} {entry.type}
-                          </span>
+                      <td className="p-3 text-sm" style={{ width: '120px' }}>
+                        <div className="font-medium truncate" title={entry.patient_name || 'N/A'}>
+                          {entry.patient_name || 'N/A'}
                         </div>
-                        <div className="text-sm mt-1">{entry.description}</div>
                       </td>
-                      <td className={`p-4 text-right ${entry.type === 'EXPENSE' ? 'text-red-600' : entry.type === 'REFUND' ? 'text-orange-600' : 'text-green-600'}`} style={{ width: '100px' }}>
-                        {entry.type === 'EXPENSE' || entry.type === 'REFUND' ? '-' : ''}₹{originalAmount.toFixed(2)}
+                      <td className="p-3 text-center text-xs" style={{ width: '80px' }}>
+                        <div>{entry.patient_age || 'N/A'}</div>
+                        <div className="text-gray-500">{entry.patient_gender || 'N/A'}</div>
                       </td>
-                      <td className="p-4 text-right" style={{ width: '100px' }}>
-                        {discountAmount > 0 ? `₹${discountAmount.toFixed(2)}` : '-'}
+                      <td className="p-3 text-sm" style={{ width: '100px' }}>
+                        <div className="truncate" title={entry.consultant_name || 'N/A'}>
+                          {entry.consultant_name || 'N/A'}
+                        </div>
                       </td>
-                      <td className={`p-4 text-right font-medium ${entry.type === 'EXPENSE' ? 'text-red-600' : entry.type === 'REFUND' ? 'text-orange-600' : 'text-green-600'}`} style={{ width: '120px' }}>
-                        {entry.type === 'EXPENSE' || entry.type === 'REFUND' ? '-' : ''}₹{netAmount.toFixed(2)}
+                      <td className="p-3 text-sm" style={{ width: '90px' }}>
+                        <div className="truncate" title={entry.department || 'N/A'}>
+                          {entry.department || 'N/A'}
+                        </div>
+                      </td>
+                      <td className="p-3 text-center" style={{ width: '80px' }}>
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          entry.type === 'REVENUE' ? 'bg-green-100 text-green-800' : 
+                          entry.type === 'EXPENSE' ? 'bg-red-100 text-red-800' : 
+                          'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {entry.type === 'REVENUE' ? '💰' : entry.type === 'EXPENSE' ? '💸' : '↩️'} {entry.type}
+                        </span>
+                      </td>
+                      <td className={`p-3 text-right text-sm ${entry.type === 'EXPENSE' ? 'text-red-600' : entry.type === 'REFUND' ? 'text-yellow-600' : 'text-green-600'}`} style={{ width: '80px' }}>
+                        {entry.type === 'EXPENSE' || entry.type === 'REFUND' ? '-' : ''}₹{originalAmount.toFixed(0)}
+                      </td>
+                      <td className="p-3 text-right text-sm" style={{ width: '70px' }}>
+                        {discountAmount > 0 ? `₹${discountAmount.toFixed(0)}` : '-'}
+                      </td>
+                      <td className={`p-3 text-right text-sm font-medium ${entry.type === 'EXPENSE' ? 'text-red-600' : entry.type === 'REFUND' ? 'text-yellow-600' : 'text-green-600'}`} style={{ width: '90px' }}>
+                        {entry.type === 'EXPENSE' || entry.type === 'REFUND' ? '-' : ''}₹{netAmount.toFixed(0)}
                       </td>
                     </tr>
                   );

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import dataService from '../services/dataService';
 import type { Patient, PatientTransaction } from '../types/index';
+import { getPatientTransactionDate, formatDateForDisplay, getPatientEntryDate } from '../utils/dateUtils';
 
 interface PatientHistoryModalProps {
   patient: Patient;
@@ -40,6 +41,8 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
   const [loading, setLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPatient, setEditedPatient] = useState<Patient>(patient);
+  const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     loadPatientData();
@@ -62,8 +65,35 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
       
       // Process visit history
       const visitMap = new Map<string, PatientTransaction[]>();
-      transactions.forEach(transaction => {
-        const date = transaction.created_at?.split('T')[0] || new Date().toISOString().split('T')[0];
+      
+      // Debug logging
+      console.log('🔍 Patient History Debug:', {
+        patientId: patient.id,
+        patientName: `${patient.first_name} ${patient.last_name}`,
+        patientDateOfEntry: patient.date_of_entry,
+        transactionCount: transactions.length,
+        firstTransaction: transactions[0]
+      });
+      
+      transactions.forEach((transaction, index) => {
+        // Use utility function to get consistent date
+        const date = getPatientTransactionDate(transaction, patient);
+        
+        // Debug each transaction
+        if (index < 3) {
+          console.log(`🔍 Transaction ${index + 1}:`, {
+            id: transaction.id,
+            type: transaction.transaction_type,
+            amount: transaction.amount,
+            transaction_date: transaction.transaction_date,
+            created_at: transaction.created_at,
+            finalDate: date,
+            formattedDate: formatDateForDisplay(date),
+            patientDateOfEntry: patient.date_of_entry,
+            source: patient.date_of_entry ? 'PATIENT_ENTRY_DATE' : (transaction.transaction_date ? 'TRANSACTION_DATE' : 'CREATED_AT')
+          });
+        }
+        
         if (!visitMap.has(date)) {
           visitMap.set(date, []);
         }
@@ -172,6 +202,122 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
     } catch (error) {
       toast.error('Failed to update patient information');
     }
+  };
+
+  // Get all transactions from all visits
+  const getAllTransactions = () => {
+    const allTransactions: (PatientTransaction & { visitDate: string; transactionId: string })[] = [];
+    visitHistory.forEach(visit => {
+      visit.transactions.forEach((transaction, index) => {
+        const transactionId = transaction.id || `${visit.date}-${index}`;
+        allTransactions.push({ 
+          ...transaction, 
+          visitDate: visit.date,
+          transactionId: transactionId
+        });
+      });
+    });
+    return allTransactions;
+  };
+
+  // Handle individual transaction selection
+  const handleTransactionSelect = (transactionId: string, checked: boolean) => {
+    const newSelected = new Set(selectedTransactions);
+    if (checked) {
+      newSelected.add(transactionId);
+    } else {
+      newSelected.delete(transactionId);
+    }
+    setSelectedTransactions(newSelected);
+    
+    // Update select all state
+    const allTransactions = getAllTransactions();
+    setSelectAll(newSelected.size === allTransactions.length);
+  };
+
+  // Handle select all transactions
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      const allTransactionIds = getAllTransactions().map(t => t.transactionId);
+      setSelectedTransactions(new Set(allTransactionIds));
+    } else {
+      setSelectedTransactions(new Set());
+    }
+    setSelectAll(checked);
+  };
+
+  // Print receipts for selected transactions
+  const printSelectedReceipts = () => {
+    const allTransactions = getAllTransactions();
+    const selectedTransactionsData = allTransactions.filter(t => selectedTransactions.has(t.transactionId));
+    
+    if (selectedTransactionsData.length === 0) {
+      toast.error('Please select at least one transaction to print');
+      return;
+    }
+
+    // Create a printable receipt for selected transactions
+    const receiptContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Transaction Receipts</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; }
+            .receipt { border: 1px solid #ccc; margin-bottom: 20px; padding: 15px; page-break-after: always; }
+            .header { text-align: center; margin-bottom: 15px; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+            .patient-info { margin-bottom: 15px; }
+            .transaction-details { background: #f9f9f9; padding: 10px; border-radius: 5px; }
+            .amount { font-size: 18px; font-weight: bold; color: #28a745; }
+            @media print {
+              .no-print { display: none; }
+              body { margin: 0; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="no-print" style="text-align: center; margin-bottom: 20px;">
+            <button onclick="window.print()" style="padding: 10px 20px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">Print All Receipts</button>
+            <button onclick="window.close()" style="padding: 10px 20px; background: #6c757d; color: white; border: none; border-radius: 5px; cursor: pointer; margin-left: 10px;">Close</button>
+          </div>
+          
+          ${selectedTransactionsData.map(transaction => `
+            <div class="receipt">
+              <div class="header">
+                <h2>Transaction Receipt</h2>
+                <p><strong>Receipt ID:</strong> ${transaction.transactionId}</p>
+                <p><strong>Date:</strong> ${new Date(transaction.visitDate).toLocaleDateString()}</p>
+              </div>
+              
+              <div class="patient-info">
+                <h3>Patient Information</h3>
+                <p><strong>Name:</strong> ${patient.first_name} ${patient.last_name}</p>
+                <p><strong>Patient ID:</strong> ${patient.patient_id}</p>
+                <p><strong>Phone:</strong> ${patient.phone || 'Not provided'}</p>
+              </div>
+              
+              <div class="transaction-details">
+                <h3>Transaction Details</h3>
+                <p><strong>Type:</strong> ${transaction.transaction_type?.replace('_', ' ').toUpperCase()}</p>
+                <p><strong>Description:</strong> ${transaction.description}</p>
+                <p><strong>Payment Mode:</strong> ${transaction.payment_mode?.toUpperCase()}</p>
+                <p><strong>Amount:</strong> <span class="amount">₹${Math.abs(transaction.amount).toFixed(2)}</span></p>
+              </div>
+            </div>
+          `).join('')}
+        </body>
+      </html>
+    `;
+
+    // Open receipt in new window
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(receiptContent);
+      printWindow.document.close();
+      printWindow.focus();
+    }
+
+    toast.success(`Generated ${selectedTransactionsData.length} receipts for printing`);
   };
 
   const formatCurrency = (amount: number) => `₹${amount.toLocaleString()}`;
@@ -335,7 +481,39 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
                 </div>
               )}
               
-              <h3 className="text-lg font-semibold text-gray-800 mb-3">💰 Transaction History</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-semibold text-gray-800">💰 Transaction History</h3>
+                
+                {/* Bulk Actions */}
+                {visitHistory.length > 0 && (
+                  <div className="flex items-center gap-3">
+                    <label className="flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={selectAll}
+                        onChange={(e) => handleSelectAll(e.target.checked)}
+                        className="w-4 h-4"
+                      />
+                      Select All ({getAllTransactions().length})
+                    </label>
+                    
+                    {selectedTransactions.size > 0 && (
+                      <>
+                        <span className="text-sm text-blue-600 font-medium">
+                          {selectedTransactions.size} selected
+                        </span>
+                        <button
+                          onClick={printSelectedReceipts}
+                          className="flex items-center gap-1 px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+                        >
+                          🖨️ Print Receipts
+                        </button>
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
+              
               {visitHistory.length === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   No transaction history found for this patient.
@@ -368,9 +546,27 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
                     </div>
                     
                     <div className="space-y-2">
-                      {visit.transactions.map((transaction, tIndex) => (
+                      {visit.transactions.map((transaction, tIndex) => {
+                        console.log('🔍 Transaction:', transaction);
+                        const transactionId = transaction.id || `${visit.date}-${tIndex}`;
+                        return (
                         <div key={tIndex} className="flex justify-between items-center py-2 px-3 bg-white rounded">
                           <div className="flex items-center gap-3">
+                            <input
+                              type="checkbox"
+                              checked={selectedTransactions.has(transactionId)}
+                              onChange={(e) => {
+                                console.log('📦 Checkbox changed:', transactionId, e.target.checked);
+                                handleTransactionSelect(transactionId, e.target.checked);
+                              }}
+                              className="w-4 h-4"
+                              style={{ 
+                                minWidth: '16px', 
+                                minHeight: '16px',
+                                accentColor: '#2563eb',
+                                cursor: 'pointer'
+                              }}
+                            />
                             <span className="text-xl">{getTransactionIcon(transaction.transaction_type)}</span>
                             <div>
                               <div className="font-medium">{transaction.description}</div>
@@ -385,7 +581,8 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, onCl
                             </div>
                           </div>
                         </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 ))

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 import HospitalService from '../services/hospitalService';
 
 interface DailyExpense {

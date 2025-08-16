@@ -4,7 +4,7 @@ import { Search, Download, Printer, Calendar, User, FileText, DollarSign, Clock,
 import HospitalService from '../../services/hospitalService';
 import DoctorService from '../../services/doctorService';
 import BillingService from '../../services/billingService';
-import type { PatientWithRelations } from '../../config/supabaseNew';
+import type { PatientWithRelations } from '../../config/supabase';
 import BillingReceipt from './BillingReceipt';
 
 // Using PatientWithRelations from config instead of local interface
@@ -465,7 +465,11 @@ const CombinedBillingModule: React.FC = () => {
 
   const generateSummaryPrintContent = (bills: CombinedBill[]): string => {
     const currentDate = new Date().toLocaleDateString('en-IN');
-    const currentTime = new Date().toLocaleTimeString('en-IN');
+    const currentTime = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     
     const totalRevenue = bills.reduce((sum, bill) => sum + bill.grandTotal, 0);
     const totalOPDRevenue = bills.reduce((sum, bill) => sum + bill.totalOPDAmount, 0);
@@ -634,7 +638,7 @@ const CombinedBillingModule: React.FC = () => {
             <div class="logo-section">
               <img 
                 src="/logo.png" 
-                alt="VALANT HOSPITAL BHILWARA Logo" 
+                alt="VALANT Hospital Logo" 
                 class="logo"
               />
             </div>
@@ -756,7 +760,7 @@ const CombinedBillingModule: React.FC = () => {
 
           <!-- Footer -->
           <div class="footer">
-            <p><strong>Thank you for choosing VALANT HOSPITAL BHILWARA</strong></p>
+            <p><strong>Thank you for choosing VALANT Hospital</strong></p>
             <p>A unit of Neuorth Medicare Pvt Ltd</p>
             <p style="font-weight: bold; margin-top: 8px;">** ORIGINAL COPY **</p>
             <p style="margin-top: 4px;">This is a computer generated report • Generated on ${currentDate} at ${currentTime}</p>

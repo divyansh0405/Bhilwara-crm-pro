@@ -5,7 +5,7 @@ import { Plus, Search, Edit, Printer, Download, X, Calendar, User, Stethoscope, 
 import HospitalService from '../../services/hospitalService';
 import DoctorService, { type DoctorInfo } from '../../services/doctorService';
 import BillingService, { type OPDBill } from '../../services/billingService';
-import type { PatientWithRelations } from '../../config/supabaseNew';
+import type { PatientWithRelations } from '../../config/supabase';
 import ReceiptTemplate, { type ReceiptData } from '../receipts/ReceiptTemplate';
 
 // Using PatientWithRelations from config instead of local interface
@@ -312,10 +312,14 @@ const OPDBillingModule: React.FC = () => {
       type: 'CONSULTATION',
       receiptNumber: bill.billId,
       date: new Date(bill.billDate).toLocaleDateString('en-IN'),
-      time: new Date(bill.billDate).toLocaleTimeString('en-IN'),
+      time: new Date(bill.billDate).toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      }),
       
       hospital: {
-        name: 'VALANT HOSPITAL BHILWARA',
+        name: 'VALANT HOSPITAL',
         address: 'Madhuban, Siwan, Bihar',
         phone: '+91 99999 99999',
         email: 'info@valanthospital.com',
@@ -476,7 +480,11 @@ const OPDBillingModule: React.FC = () => {
 
   const generateOPDBillPrint = (bill: OPDBill): string => {
     const currentDate = new Date().toLocaleDateString('en-IN');
-    const currentTime = new Date().toLocaleTimeString('en-IN');
+    const currentTime = new Date().toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
     
     return `
       <!DOCTYPE html>

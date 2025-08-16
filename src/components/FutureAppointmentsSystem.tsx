@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
 import Receipt from './Receipt';
-import type { FutureAppointment, PatientWithRelations, User, CreateAppointmentData, AppointmentWithRelations } from '../config/supabaseNew';
-import { APPOINTMENT_TYPES, APPOINTMENT_STATUS } from '../config/supabaseNew';
+import type { FutureAppointment, PatientWithRelations, User, CreateAppointmentData, AppointmentWithRelations } from '../config/supabase';
+import { APPOINTMENT_TYPES, APPOINTMENT_STATUS } from '../config/supabase';
 
 interface AppointmentFormProps {
   isOpen: boolean;

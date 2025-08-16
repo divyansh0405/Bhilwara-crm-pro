@@ -5,7 +5,7 @@ import ConsentAnaesthesiaForm from './forms/ConsentAnaesthesiaForm';
 import HighRiskConsentForm from './forms/HighRiskConsentForm';
 import ConsentVentilatorForm from './forms/ConsentVentilatorForm';
 import ConsentSurgeryProcedureForm from './forms/ConsentSurgeryProcedureForm';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 
 interface IPDConsentsSectionProps {
   isOpen: boolean;

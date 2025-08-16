@@ -1,5 +1,5 @@
-import { supabase, HOSPITAL_ID } from '../config/supabaseNew';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import { supabase, HOSPITAL_ID } from '../config/supabase';
+import type { PatientWithRelations } from '../config/supabase';
 
 export class ExactDateService {
   static async getPatientsForExactDate(dateStr: string, limit = 100): Promise<PatientWithRelations[]> {

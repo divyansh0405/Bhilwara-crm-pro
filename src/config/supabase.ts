@@ -5,7 +5,6 @@ const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables');
   throw new Error('Missing Supabase environment variables');
 }
 
@@ -22,8 +21,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     },
   },
 });
-
-console.log('✅ Supabase client initialized with URL:', supabaseUrl);
 
 // Database Types (matching Supabase schema)
 export interface User {
@@ -229,3 +226,27 @@ export type SupabaseQuery<T> = {
 
 // Export configured client as default
 export default supabase;
+// DEFAULT HOSPITAL ID (Bhilwara Hospital)
+export const HOSPITAL_ID = '550e8400-e29b-41d4-a716-446655440000';
+
+// Additional interfaces for compatibility
+export interface AssignedDoctor {
+  name: string;
+  department: string;
+  consultationFee?: number;
+  isPrimary?: boolean;
+}
+
+export interface CreateTransactionData {
+  patient_id: string;
+  transaction_type: 'ENTRY_FEE' | 'CONSULTATION' | 'LAB_TEST' | 'XRAY' | 'MEDICINE' | 'PROCEDURE' | 'ADMISSION_FEE' | 'DAILY_CHARGE' | 'SERVICE' | 'REFUND';
+  amount: number;
+  payment_mode: 'CASH' | 'CARD' | 'UPI' | 'ONLINE' | 'BANK_TRANSFER' | 'INSURANCE';
+  description: string;
+  doctor_id?: string;
+  doctor_name?: string;
+  department?: string;
+  status?: 'PENDING' | 'COMPLETED' | 'CANCELLED';
+  transaction_reference?: string;
+  transaction_date?: string;
+}

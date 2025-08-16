@@ -1,4 +1,4 @@
-import { supabase, HOSPITAL_ID } from '../config/supabaseNew';
+import { supabase, HOSPITAL_ID } from '../config/supabase';
 import type { 
   Patient, 
   PatientTransaction, 
@@ -14,7 +14,7 @@ import type {
   PatientWithRelations,
   DashboardStats,
   AppointmentWithRelations
-} from '../config/supabaseNew';
+} from '../config/supabase';
 
 export class HospitalService {
   
@@ -46,7 +46,7 @@ export class HospitalService {
         const result = await supabase
           .from('users')
           .select('*')
-          .eq('id', user.id);
+          .eq('auth_id', user.id);
           
         if (result.error) {
           profileError = result.error;
@@ -130,11 +130,16 @@ export class HospitalService {
       
       // If no existing user, try to create new one
       const userData = {
-        id: authUser.id,  // Changed from auth_id to id
+        auth_id: authUser.id,
         email: authUser.email,
         first_name: authUser.user_metadata?.first_name || authUser.email.split('@')[0],
         last_name: authUser.user_metadata?.last_name || '',
         role: 'STAFF',
+        phone: authUser.user_metadata?.phone || '',
+        specialization: '',
+        consultation_fee: 0,
+        department: 'General',
+        hospital_id: HOSPITAL_ID,
         is_active: true
       };
       
@@ -839,7 +844,12 @@ export class HospitalService {
   // ==================== TRANSACTION OPERATIONS ====================
   
   static async createTransaction(data: CreateTransactionData): Promise<PatientTransaction> {
-    console.log('💰 Creating transaction:', data);
+    console.log('💰 Creating transaction with date (HospitalService):', {
+      input_transaction_date: data.transaction_date,
+      input_transaction_date_type: typeof data.transaction_date,
+      jsDateParsed: data.transaction_date ? new Date(data.transaction_date) : null,
+      full_data: data
+    });
     
     try {
       const transactionData = {
@@ -851,8 +861,18 @@ export class HospitalService {
         doctor_id: data.doctor_id || null,
         doctor_name: data.doctor_name || null,
         status: data.status || 'COMPLETED',
-        transaction_reference: data.transaction_reference || null
+        transaction_reference: data.transaction_reference || null,
+        transaction_date: data.transaction_date || new Date().toISOString().split('T')[0], // FIX: Include transaction_date
+        hospital_id: HOSPITAL_ID // Fix: Add hospital_id to make transaction visible in dashboard
       };
+      
+      console.log('🔍 TRANSACTION CREATION DEBUG:', {
+        transactionData,
+        transaction_date_being_saved: transactionData.transaction_date,
+        HOSPITAL_ID,
+        inputData: data,
+        todayDate: new Date().toISOString().split('T')[0]
+      });
       
       const { data: transaction, error } = await supabase
         .from('patient_transactions')
@@ -866,6 +886,34 @@ export class HospitalService {
       }
       
       console.log('✅ Transaction created:', transaction);
+      
+      // 🔍 VERIFY: Check if transaction was actually inserted with correct data
+      const verifyQuery = await supabase
+        .from('patient_transactions')
+        .select(`
+          id,
+          amount,
+          transaction_type,
+          description,
+          status,
+          created_at,
+          transaction_date,
+          hospital_id,
+          patient:patients!inner(id, patient_id, first_name, last_name, hospital_id, date_of_entry)
+        `)
+        .eq('id', transaction.id)
+        .single();
+        
+      console.log('🔍 TRANSACTION VERIFICATION:', {
+        insertedTransaction: transaction,
+        verificationQuery: verifyQuery.data,
+        verificationError: verifyQuery.error,
+        hospitalIdMatch: verifyQuery.data?.hospital_id === HOSPITAL_ID,
+        patientHospitalId: verifyQuery.data?.patient?.hospital_id,
+        todayDate: new Date().toISOString().split('T')[0],
+        transactionCreatedDate: verifyQuery.data?.created_at?.split('T')[0]
+      });
+      
       return transaction as PatientTransaction;
       
     } catch (error: any) {
@@ -1047,64 +1095,74 @@ export class HospitalService {
       // Get counts in parallel
       const [
         patientsResult,
+        todayPatientsResult,
         doctorsResult,
         bedsResult,
         todayAppointmentsResult
       ] = await Promise.all([
+        // Total patients (for default dashboard view)
         supabase.from('patients').select('*', { count: 'exact', head: true }).eq('hospital_id', HOSPITAL_ID),
+        // Today's patients (for revenue card context)
+        supabase.from('patients')
+          .select('*', { count: 'exact', head: true })
+          .eq('hospital_id', HOSPITAL_ID)
+          .or(`date_of_entry.eq.${today},created_at.gte.${today}T00:00:00,created_at.lt.${today}T23:59:59`),
         supabase.from('users').select('*', { count: 'exact', head: true }).eq('hospital_id', HOSPITAL_ID).neq('role', 'ADMIN'),
         supabase.from('beds').select('*', { count: 'exact', head: true }).eq('hospital_id', HOSPITAL_ID),
         supabase.from('future_appointments').select('*', { count: 'exact', head: true }).eq('appointment_date', today)
       ]);
       
       const totalPatients = patientsResult.count || 0;
+      const todayPatients = todayPatientsResult.count || 0;
       const totalDoctors = doctorsResult.count || 0;
       const totalBeds = bedsResult.count || 0;
       const todayAppointments = todayAppointmentsResult.count || 0;
       
       console.log('📋 Getting transactions for today\'s revenue calculation...');
       
-      // Get ALL transactions to check service dates
-      const { data: allTransactions, error: transError } = await supabase
-        .from('patient_transactions')
-        .select('*, patient:patients!patient_transactions_patient_id_fkey(assigned_department, assigned_doctor)')
-        .eq('status', 'COMPLETED')
-        .order('created_at', { ascending: false });
+      // Get ALL transactions to check service dates AND recent patients
+      const [transactionsResult, recentPatientsResult] = await Promise.all([
+        supabase
+          .from('patient_transactions')
+          .select('*, patient:patients!patient_transactions_patient_id_fkey(assigned_department, assigned_doctor, date_of_entry)')
+          .eq('status', 'COMPLETED')
+          .order('transaction_date', { ascending: false }),
+        
+        // Get recent patients for details section
+        supabase
+          .from('patients')
+          .select('*')
+          .eq('hospital_id', HOSPITAL_ID)
+          .order('created_at', { ascending: false })
+          .limit(10)
+      ]);
+      
+      const allTransactions = transactionsResult.data;
+      const transError = transactionsResult.error;
+      const recentPatients = recentPatientsResult.data || [];
       
       if (transError) {
         console.error('❌ Error fetching transactions:', transError);
       }
       
-      // Calculate today's revenue from transactions with today's service date
-      let todayRevenue = 0;
-      if (allTransactions) {
-        allTransactions.forEach(transaction => {
-          // Check if this transaction is for today based on service date in description
-          let transactionDate = transaction.created_at.split('T')[0];
-          
-          // Extract service date from description if present
-          const dateMatch = transaction.description?.match(/\[Date:\s*(\d{4}-\d{2}-\d{2})\]/);
-          if (dateMatch) {
-            transactionDate = dateMatch[1];
-          }
-          
-          // Only include transactions for today
-          if (transactionDate === today) {
-            // Exclude ORTHO/DR. HEMANT patients
-            if (transaction.patient?.assigned_department === 'ORTHO' || 
-                transaction.patient?.assigned_doctor === 'DR. HEMANT') {
-              console.log(`❌ Excluding ORTHO/DR. HEMANT transaction: ₹${transaction.amount}`);
-            } else {
-              todayRevenue += transaction.amount || 0;
-            }
-          }
-        });
-      }
-      
-      console.log('💰 Today\'s revenue calculation FINAL (transaction-based):', {
-        todayDate: today,
-        finalTodayRevenue: todayRevenue
+      // 🔍 WHITE-BOX DEBUGGING: Analyze raw data
+      console.log('🔍 WHITE-BOX DEBUG - Raw Transaction Data:', {
+        totalTransactions: allTransactions?.length || 0,
+        sampleTransactions: allTransactions?.slice(0, 5).map(t => ({
+          id: t.id,
+          amount: t.amount,
+          transaction_date: t.transaction_date,
+          transaction_date_type: typeof t.transaction_date,
+          created_at: t.created_at,
+          patient_id: t.patient_id,
+          patient_dept: t.patient?.assigned_department,
+          patient_doctor: t.patient?.assigned_doctor
+        })) || [],
+        todayTarget: today
       });
+      
+      // Note: todayRevenue calculation is now handled in periodBreakdown.today.revenue below
+      console.log('💰 Using period breakdown for today\'s revenue calculation...');
       
       // Calculate period breakdown for always-available period data
       const periodBreakdown = {
@@ -1114,46 +1172,92 @@ export class HospitalService {
       };
       
       // Calculate date boundaries for periods
-      const todayStart = new Date(today);
-      todayStart.setHours(0, 0, 0, 0);
-      const todayEnd = new Date(today);
-      todayEnd.setHours(23, 59, 59, 999);
+      const todayDate = today; // YYYY-MM-DD string
       
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - 7);
-      weekStart.setHours(0, 0, 0, 0);
+      // This week: last 7 days including today
+      const weekStartDate = new Date();
+      weekStartDate.setDate(weekStartDate.getDate() - 6); // 7 days including today
+      const weekStartStr = weekStartDate.toISOString().split('T')[0];
       
-      const monthStart = new Date();
-      monthStart.setDate(1);
-      monthStart.setHours(0, 0, 0, 0);
-      const monthEnd = new Date();
-      monthEnd.setMonth(monthEnd.getMonth() + 1, 0);
-      monthEnd.setHours(23, 59, 59, 999);
+      // This month: current month
+      const monthStartStr = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
+      const monthEndStr = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
+      
+      console.log('📅 Period Date Ranges:', {
+        today: todayDate,
+        weekStart: weekStartStr,
+        monthStart: monthStartStr,
+        monthEnd: monthEndStr
+      });
       
       // Process transactions for period breakdown
       if (allTransactions) {
-        allTransactions.forEach(transaction => {
+        allTransactions.forEach((transaction, index) => {
           // Skip ORTHO/DR. HEMANT patients
           if (transaction.patient?.assigned_department === 'ORTHO' || 
               transaction.patient?.assigned_doctor === 'DR. HEMANT') {
             return;
           }
           
-          const transactionDate = new Date(transaction.created_at);
+          // 🔍 WHITE-BOX: Bulletproof date processing
+          const rawTransactionDate = transaction.transaction_date;
+          const rawCreatedAt = transaction.created_at;
+          
+          // CRITICAL FIX: Use patient.date_of_entry as priority (like ComprehensivePatientList)
+          let transactionDateStr;
+          if (transaction.patient?.date_of_entry && transaction.patient.date_of_entry.trim() !== '') {
+            // Priority 1: Patient's date_of_entry (for backdated entries)
+            transactionDateStr = transaction.patient.date_of_entry.includes('T') 
+              ? transaction.patient.date_of_entry.split('T')[0] 
+              : transaction.patient.date_of_entry;
+          } else if (transaction.transaction_date && transaction.transaction_date.trim() !== '') {
+            // Priority 2: Transaction's transaction_date
+            transactionDateStr = transaction.transaction_date.includes('T') 
+              ? transaction.transaction_date.split('T')[0] 
+              : transaction.transaction_date;
+          } else {
+            // Priority 3: Transaction's created_at date
+            transactionDateStr = transaction.created_at.split('T')[0];
+          }
+          
           const enhancedTransaction = {
             ...transaction,
-            patientName: `${transaction.patient?.first_name || ''} ${transaction.patient?.last_name || ''}`.trim()
+            patientName: `${transaction.patient?.first_name || ''} ${transaction.patient?.last_name || ''}`.trim(),
+            displayDate: transactionDateStr
           };
           
-          // Today
-          if (transactionDate >= todayStart && transactionDate <= todayEnd) {
+          // 🔍 WHITE-BOX: Debug EVERY transaction date processing
+          if (index < 10) {
+            console.log(`🔍 WHITE-BOX Transaction ${index}:`, {
+              id: transaction.id,
+              amount: transaction.amount,
+              patientName: `${transaction.patient?.first_name} ${transaction.patient?.last_name}`,
+              patientDateOfEntry: transaction.patient?.date_of_entry,
+              rawTransactionDate,
+              rawCreatedAt,
+              processedDateStr: transactionDateStr,
+              dateSourceUsed: transaction.patient?.date_of_entry ? 'PATIENT_ENTRY_DATE' : 
+                             (transaction.transaction_date ? 'TRANSACTION_DATE' : 'CREATED_AT'),
+              todayDate,
+              weekStartStr,
+              monthStartStr,
+              dateComparisons: {
+                isToday: transactionDateStr === todayDate,
+                isThisWeek: transactionDateStr >= weekStartStr && transactionDateStr <= todayDate,
+                isThisMonth: transactionDateStr >= monthStartStr && transactionDateStr <= monthEndStr
+              }
+            });
+          }
+          
+          // Today - exact date match
+          if (transactionDateStr === todayDate) {
             periodBreakdown.today.revenue += transaction.amount || 0;
             periodBreakdown.today.transactions.push(enhancedTransaction);
             periodBreakdown.today.count++;
           }
           
-          // This Week
-          if (transactionDate >= weekStart) {
+          // This Week - last 7 days including today
+          if (transactionDateStr >= weekStartStr && transactionDateStr <= todayDate) {
             periodBreakdown.thisWeek.revenue += transaction.amount || 0;
             if (periodBreakdown.thisWeek.transactions.length < 20) {
               periodBreakdown.thisWeek.transactions.push(enhancedTransaction);
@@ -1161,8 +1265,8 @@ export class HospitalService {
             periodBreakdown.thisWeek.count++;
           }
           
-          // This Month
-          if (transactionDate >= monthStart && transactionDate <= monthEnd) {
+          // This Month - current month
+          if (transactionDateStr >= monthStartStr && transactionDateStr <= monthEndStr) {
             periodBreakdown.thisMonth.revenue += transaction.amount || 0;
             if (periodBreakdown.thisMonth.transactions.length < 50) {
               periodBreakdown.thisMonth.transactions.push(enhancedTransaction);
@@ -1178,6 +1282,48 @@ export class HospitalService {
         thisMonth: `₹${periodBreakdown.thisMonth.revenue} (${periodBreakdown.thisMonth.count} records)`
       });
       
+      // 🔍 WHITE-BOX: Final return value analysis
+      const finalTodayRevenue = periodBreakdown.today.revenue;
+      console.log('🔍 WHITE-BOX FINAL RETURN VALUES:', {
+        todayRevenueReturned: finalTodayRevenue,
+        periodBreakdownToday: periodBreakdown.today,
+        willShowInDashboard: {
+          mainRevenueCard: finalTodayRevenue,
+          breakdownToday: periodBreakdown.today.revenue,
+          breakdownThisWeek: periodBreakdown.thisWeek.revenue,
+          breakdownThisMonth: periodBreakdown.thisMonth.revenue
+        }
+      });
+      
+      console.log('🔍 Dashboard Stats Debug:', {
+        totalPatients,
+        todayPatients,
+        todayRevenue: periodBreakdown.today.revenue,
+        periodBreakdownToday: periodBreakdown.today.count,
+        timestamp: new Date().toLocaleTimeString(),
+        todayDate: today
+      });
+      
+      // Debug sample transactions from today
+      const todayTransactions = allTransactions?.filter(t => {
+        const tDate = t.transaction_date 
+          ? (t.transaction_date.includes('T') ? t.transaction_date.split('T')[0] : t.transaction_date)
+          : t.created_at.split('T')[0];
+        return tDate === today;
+      }) || [];
+      
+      console.log('📊 Today\'s Transactions Sample:', {
+        todayDate: today,
+        count: todayTransactions.length,
+        sampleTransactions: todayTransactions.slice(0, 3).map(t => ({
+          id: t.id,
+          amount: t.amount,
+          transaction_date: t.transaction_date,
+          created_at: t.created_at,
+          patient: t.patient?.first_name + ' ' + t.patient?.last_name
+        }))
+      });
+      
       // Calculate monthly revenue using transaction-based approach
       const startOfMonth = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0];
       const endOfMonth = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).toISOString().split('T')[0];
@@ -1188,14 +1334,10 @@ export class HospitalService {
       let monthlyRevenue = 0;
       if (allTransactions) {
         allTransactions.forEach(transaction => {
-          // Check if this transaction is for current month based on service date
-          let transactionDate = transaction.created_at.split('T')[0];
-          
-          // Extract service date from description if present
-          const dateMatch = transaction.description?.match(/\[Date:\s*(\d{4}-\d{2}-\d{2})\]/);
-          if (dateMatch) {
-            transactionDate = dateMatch[1];
-          }
+          // Use transaction_date if available, otherwise fall back to created_at
+          let transactionDate = transaction.transaction_date 
+            ? (transaction.transaction_date.includes('T') ? transaction.transaction_date.split('T')[0] : transaction.transaction_date)
+            : transaction.created_at.split('T')[0];
           
           // Only include transactions for current month
           if (transactionDate >= startOfMonth && transactionDate <= endOfMonth) {
@@ -1221,7 +1363,7 @@ export class HospitalService {
         totalDoctors,
         totalBeds,
         occupiedBeds: 0, // TODO: Calculate from admissions
-        todayRevenue,
+        todayRevenue: periodBreakdown.today.revenue, // Use exact today's revenue from period breakdown
         monthlyRevenue,
         todayAppointments,
         pendingAdmissions: 0, // TODO: Calculate from admissions
@@ -1231,7 +1373,7 @@ export class HospitalService {
         // Add detailed breakdown with period data
         details: {
           revenue: {
-            total: todayRevenue,
+            total: periodBreakdown.today.revenue, // Use exact today's revenue
             byType: {}, // Could be enhanced later
             byPaymentMode: {}, // Could be enhanced later
             byDepartment: {}, // Could be enhanced later
@@ -1240,7 +1382,7 @@ export class HospitalService {
           },
           patients: {
             total: totalPatients,
-            recentPatients: []
+            recentPatients: recentPatients
           },
           appointments: {
             total: todayAppointments,
@@ -1350,15 +1492,15 @@ export class HospitalService {
         end: end.toISOString()
       });
       
-      // Get transactions in date range with details
+      // Get transactions in date range with details - using transaction_date for correct filtering
       const { data: allTransactions, error: transError } = await supabase
         .from('patient_transactions')
         .select('*, patient:patients!patient_transactions_patient_id_fkey(first_name, last_name, assigned_department, assigned_doctor)')
         .eq('hospital_id', HOSPITAL_ID)
         .eq('status', 'COMPLETED')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString())
-        .order('created_at', { ascending: false });
+        .gte('transaction_date', start.toISOString().split('T')[0])
+        .lte('transaction_date', end.toISOString().split('T')[0])
+        .order('transaction_date', { ascending: false });
       
       if (transError) {
         console.error('❌ Error fetching transactions:', transError);
@@ -1413,13 +1555,19 @@ export class HospitalService {
           // Total revenue (all transactions)
           totalRevenue += transaction.amount || 0;
           
-          const transactionDate = new Date(transaction.created_at);
+          // Use transaction_date if available, otherwise fall back to created_at
+          const transactionDateStr = transaction.transaction_date 
+            ? (transaction.transaction_date.includes('T') ? transaction.transaction_date.split('T')[0] : transaction.transaction_date)
+            : transaction.created_at.split('T')[0];
+          const transactionDate = new Date(transactionDateStr + 'T00:00:00.000Z');
           
           // Debug first few transactions
           if (index < 3) {
             console.log(`Transaction ${index}:`, {
               id: transaction.id,
               created_at: transaction.created_at,
+              transaction_date: transaction.transaction_date,
+              used_date: transactionDateStr,
               parsed_date: transactionDate.toISOString(),
               amount: transaction.amount,
               patient_dept: transaction.patient?.assigned_department,

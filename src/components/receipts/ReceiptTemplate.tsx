@@ -222,7 +222,7 @@ const ReceiptTemplate: React.FC<ReceiptTemplateProps> = ({ data, className = '' 
         <div className="flex flex-col items-center justify-center mb-4">
           {/* Hospital Name - Always visible */}
           <h1 className="text-2xl font-bold text-blue-600 mb-2 print:text-black print:block">
-            {data.hospital.name || 'VALANT HOSPITAL BHILWARA'}
+            {data.hospital.name || 'VALANT HOSPITAL'}
           </h1>
           {/* Logo - Optional */}
           <img 

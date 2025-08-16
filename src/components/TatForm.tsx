@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 
 interface TatFormData {
   // Patient Information

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import type { Patient, PatientTransaction } from '../config/supabaseNew';
+import type { Patient, PatientTransaction } from '../config/supabase';
 import HospitalService from '../services/hospitalService';
 import toast from 'react-hot-toast';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface PatientServiceManagerProps {
   patient: Patient;
@@ -66,6 +67,7 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
   onClose,
   onServicesUpdated
 }) => {
+  const queryClient = useQueryClient();
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [newService, setNewService] = useState<ServiceItem>({
     name: '',
@@ -170,6 +172,8 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
   };
 
   const handleAddService = async () => {
+    console.log('🚨 handleAddService called!', { newService });
+    
     if (!newService.name || newService.price <= 0) {
       toast.error('Please enter service name and valid price');
       return;
@@ -182,14 +186,31 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
       const finalAmount = originalAmount - discountAmount;
       
       // Create transaction for the service
+      const finalServiceDate = newService.serviceDate || new Date().toISOString().split('T')[0];
+      console.log('📅 SERVICE DATE DEBUG (PatientServiceManager):', {
+        serviceDate: newService.serviceDate,
+        serviceDateType: typeof newService.serviceDate,
+        fallbackDate: new Date().toISOString().split('T')[0],
+        finalServiceDate: finalServiceDate,
+        finalServiceDateType: typeof finalServiceDate,
+        jsDateParsed: new Date(finalServiceDate),
+        jsDateISO: new Date(finalServiceDate).toISOString()
+      });
+      
       const transactionData = {
         patient_id: patient.id,
         transaction_type: newService.category,
         amount: finalAmount,
         description: `${newService.name}${newService.quantity > 1 ? ` x${newService.quantity}` : ''}${newService.discount > 0 ? ` (Original: ₹${(newService.price * newService.quantity).toLocaleString()}, Discount: ${newService.discount}%, Final: ₹${finalAmount.toLocaleString()})` : ''}${newService.serviceDate ? ` [Date: ${newService.serviceDate}]` : ''}${newService.notes ? ` - ${newService.notes}` : ''}`,
         payment_mode: newService.paymentMode,
-        status: 'COMPLETED' as const
+        status: 'COMPLETED' as const,
+        transaction_date: finalServiceDate // 🔍 CRITICAL FIX: Set actual transaction_date field
       };
+      
+      console.log('📤 SENDING TRANSACTION DATA:', {
+        transaction_date: transactionData.transaction_date,
+        full_data: transactionData
+      });
 
       const transaction = await HospitalService.createTransaction(transactionData);
       
@@ -201,6 +222,14 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
       };
       
       setServices([...services, serviceItem]);
+      
+      // 🔄 CRITICAL FIX: Invalidate React Query cache to refresh dashboard
+      queryClient.invalidateQueries({ queryKey: ['operations'] }); // This covers ['operations', 'revenue-expenses', ...]
+      queryClient.invalidateQueries({ queryKey: ['all-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['beds'] });
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      
+      console.log('💰 SERVICE ADDED - Cache invalidated for dashboard refresh');
       
       // Reset form
       setNewService({
@@ -237,7 +266,15 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
     if (!editingService || editingIndex === null) return;
     
     try {
-      console.log('📅 Updating service with date:', editingService.serviceDate);
+      const finalUpdateDate = editingService.serviceDate || new Date().toISOString().split('T')[0];
+      console.log('📅 UPDATING SERVICE DATE DEBUG (PatientServiceManager):', {
+        editingServiceDate: editingService.serviceDate,
+        editingServiceDateType: typeof editingService.serviceDate,
+        fallbackDate: new Date().toISOString().split('T')[0],
+        finalUpdateDate: finalUpdateDate,
+        jsDateParsed: new Date(finalUpdateDate),
+        jsDateISO: new Date(finalUpdateDate).toISOString()
+      });
       
       if (editingService.transactionId) {
         // Calculate final amount after discount
@@ -253,8 +290,11 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
         await HospitalService.updateTransaction(editingService.transactionId, {
           amount: finalAmount,
           description: updatedDescription,
-          payment_mode: editingService.paymentMode
+          payment_mode: editingService.paymentMode,
+          transaction_date: finalUpdateDate // 🔥 CRITICAL FIX: Update transaction_date field
         });
+        
+        console.log('🔥 UPDATED TRANSACTION_DATE:', editingService.serviceDate);
       }
       
       // Update local state
@@ -267,6 +307,11 @@ const PatientServiceManager: React.FC<PatientServiceManagerProps> = ({
       // Reset edit state
       setEditingIndex(null);
       setEditingService(null);
+      
+      // 🔄 CRITICAL: Invalidate React Query cache to refresh operations ledger
+      queryClient.invalidateQueries({ queryKey: ['operations'] });
+      queryClient.invalidateQueries({ queryKey: ['all-patients'] });
+      queryClient.invalidateQueries({ queryKey: ['transactions'] });
       
       toast.success('Service updated successfully');
       

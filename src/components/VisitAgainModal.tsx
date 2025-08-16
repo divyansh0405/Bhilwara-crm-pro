@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import dataService from '../services/dataService';
 import HospitalService from '../services/hospitalService';
 import type { Patient, Doctor, Department } from '../services/dataService';
-import type { PatientWithRelations, CreateTransactionData } from '../config/supabaseNew';
+import type { PatientWithRelations, CreateTransactionData } from '../config/supabase';
 
 // Doctors and Departments data (same as NewFlexiblePatientEntry)
 const DOCTORS_DATA = [
@@ -226,7 +226,7 @@ const VisitAgainModal: React.FC<VisitAgainModalProps> = ({ patient, onClose, onV
       date: visitDate.toLocaleDateString('en-IN'),
       time: visitDate.toLocaleTimeString('en-IN'),
       hospital: {
-        name: 'VALANT HOSPITAL BHILWARA',
+        name: 'VALANT Hospital',
         address: 'Near Railway Station, Dahod, Gujarat - 389151',
         phone: '+91 2673 245678',
         email: 'info@valanthospital.com',

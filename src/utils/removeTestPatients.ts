@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 export async function removeTestPatients() {
   try {

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const AuthDebugger: React.FC = () => {
   const [authUser, setAuthUser] = useState<any>(null);

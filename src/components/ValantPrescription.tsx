@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 import { getDoctorWithDegree } from '../data/doctorDegrees';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 interface ValantPrescriptionProps {
   patient: PatientWithRelations;

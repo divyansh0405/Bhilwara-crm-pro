@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Printer, Plus, Minus } from 'lucide-react';
 import toast from 'react-hot-toast';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 
 interface MonitoringEntry {
   id: string;

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 import toast from 'react-hot-toast';
 
 // Simple test component to debug discharge printing
@@ -86,7 +86,7 @@ const TestDischargePrint: React.FC = () => {
         date: new Date().toLocaleDateString(),
         time: new Date().toLocaleTimeString(),
         hospital: {
-          name: "VALANT HOSPITAL BHILWARA",
+          name: "VALANT Hospital",
           address: "Test Address",
           phone: "Test Phone",
           email: "test@hospital.com",

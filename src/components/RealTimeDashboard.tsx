@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
 import QuickReportsModal from './QuickReportsModal';
-import { supabase } from '../config/supabaseNew';
-import type { DashboardStats, PatientWithRelations, FutureAppointment } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
+import type { DashboardStats, PatientWithRelations, FutureAppointment } from '../config/supabase';
 
 interface StatCardProps {
   title: string;

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   Users, 
   Calendar, 
@@ -18,6 +18,7 @@ import { useAppointments } from '../../hooks/useAppointments';
 import { queryKeys } from '../../config/reactQuery';
 
 export const Dashboard: React.FC = () => {
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [localStorageUpdate, setLocalStorageUpdate] = useState(0);
@@ -38,8 +39,9 @@ export const Dashboard: React.FC = () => {
 
   // Fetch dashboard data with date filter
   const { data: dashboardStats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
-    queryKey: [...queryKeys.dashboardStats, dateFilter],
+    queryKey: [...queryKeys.dashboardStats, dateFilter, Date.now()], // Add timestamp for cache busting
     queryFn: async () => {
+      console.log('🔄 Fetching fresh dashboard data...', new Date().toLocaleTimeString());
       const stats = await HospitalService.getDashboardStats();
       
       // If date filter is applied, fetch filtered data
@@ -52,9 +54,16 @@ export const Dashboard: React.FC = () => {
       
       return stats;
     },
-    refetchInterval: autoRefresh ? 30 * 1000 : false, // Refresh every 30 seconds when enabled
-    onSuccess: () => {
+    refetchInterval: autoRefresh ? 10 * 1000 : false, // Refresh every 10 seconds for immediate updates
+    staleTime: 0, // Always consider data stale
+    cacheTime: 0, // Don't cache data
+    onSuccess: (data) => {
       setLastRefreshTime(new Date());
+      console.log('✅ Dashboard data refreshed:', {
+        todayRevenue: data?.todayRevenue,
+        totalPatients: data?.totalPatients,
+        timestamp: new Date().toLocaleTimeString()
+      });
     },
   });
 
@@ -73,8 +82,12 @@ export const Dashboard: React.FC = () => {
 
   // Manual refresh function
   const handleManualRefresh = async () => {
+    console.log('🔄 Manual refresh triggered...');
+    // Invalidate all dashboard-related queries
+    await queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
     await Promise.all([refetchStats(), refetchAppointments()]);
     setLastRefreshTime(new Date());
+    console.log('✅ Manual refresh completed');
   };
 
   // Format last refresh time
@@ -87,14 +100,19 @@ export const Dashboard: React.FC = () => {
     return time.toLocaleTimeString();
   };
 
-  // Listen for localStorage changes and transaction updates
+  // Force immediate refresh on mount and listen for updates
   useEffect(() => {
+    // Immediate refresh on mount
+    console.log('🚀 Dashboard mounted, forcing immediate refresh...');
+    queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
+    
     const handleStorageChange = () => {
       setLocalStorageUpdate(prev => prev + 1);
     };
     
     const handleTransactionUpdate = () => {
       console.log('📊 Transaction updated, refreshing dashboard stats...');
+      queryClient.invalidateQueries({ queryKey: queryKeys.dashboardStats });
       refetchStats();
       setLastRefreshTime(new Date());
     };
@@ -113,7 +131,7 @@ export const Dashboard: React.FC = () => {
       window.removeEventListener('appointmentUpdated', handleStorageChange);
       window.removeEventListener('transactionUpdated', handleTransactionUpdate);
     };
-  }, [refetchStats]);
+  }, [queryClient, refetchStats]);
 
   // Update the "time ago" display every 5 seconds
   useEffect(() => {
@@ -161,6 +179,11 @@ export const Dashboard: React.FC = () => {
 
   // Filter appointments for selected date and next 7 days
   const getUpcomingAppointments = () => {
+    // Debug: Log the appointments data structure
+    console.log('Appointments Data from API:', appointmentsData);
+    console.log('Appointments Data type:', typeof appointmentsData);
+    console.log('Has data property?:', appointmentsData?.data);
+    
     // Combine appointments from both sources
     const supabaseAppointments = appointmentsData?.data || [];
     
@@ -170,6 +193,7 @@ export const Dashboard: React.FC = () => {
       const storedAppointments = localStorage.getItem('hospital_appointments');
       if (storedAppointments) {
         const parsed = JSON.parse(storedAppointments);
+        console.log('LocalStorage appointments:', parsed);
         // Transform localStorage appointments to match the expected format
         localAppointments = parsed.map((apt: any) => ({
           id: apt.id,
@@ -191,6 +215,7 @@ export const Dashboard: React.FC = () => {
     
     // Combine both sources
     const allAppointments = [...supabaseAppointments, ...localAppointments];
+    console.log('Combined appointments:', allAppointments);
     
     const startDate = new Date(selectedDate);
     startDate.setHours(0, 0, 0, 0);
@@ -384,7 +409,18 @@ export const Dashboard: React.FC = () => {
               className="bg-[#007bff] hover:bg-[#0056b3] text-white px-4 py-2 rounded-lg flex items-center gap-2 disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 ${statsLoading ? 'animate-spin' : ''}`} />
-              Refresh Data
+              {statsLoading ? 'Refreshing...' : 'Force Refresh'}
+            </Button>
+            
+            <Button 
+              onClick={() => {
+                console.log('🔥 FORCE CACHE CLEAR BUTTON CLICKED');
+                queryClient.clear(); // Clear all cache
+                window.location.reload(); // Force full page reload
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            >
+              🔥 Clear Cache
             </Button>
           </div>
         </div>
@@ -604,7 +640,16 @@ export const Dashboard: React.FC = () => {
                                 <td className="px-3 py-2">{trans.transaction_type?.replace(/_/g, ' ')}</td>
                                 <td className="px-3 py-2">{trans.payment_mode}</td>
                                 <td className="px-3 py-2 text-right font-medium">{formatCurrency(trans.amount)}</td>
-                                <td className="px-3 py-2">{new Date(trans.created_at).toLocaleDateString()}</td>
+                                <td className="px-3 py-2">{(() => {
+                                  // Use same logic as ComprehensivePatientList - transaction_date as priority
+                                  let displayDate = null;
+                                  if (trans.transaction_date) {
+                                    displayDate = trans.transaction_date;
+                                  } else {
+                                    displayDate = trans.created_at;
+                                  }
+                                  return new Date(displayDate).toLocaleDateString();
+                                })()}</td>
                               </tr>
                             ))}
                           </tbody>
@@ -669,7 +714,16 @@ export const Dashboard: React.FC = () => {
                             <td className="px-4 py-2">{trans.transaction_type?.replace(/_/g, ' ')}</td>
                             <td className="px-4 py-2">{trans.payment_mode}</td>
                             <td className="px-4 py-2 text-right">{formatCurrency(trans.amount)}</td>
-                            <td className="px-4 py-2">{new Date(trans.created_at).toLocaleDateString()}</td>
+                            <td className="px-4 py-2">{(() => {
+                              // Use same logic as ComprehensivePatientList - transaction_date as priority
+                              let displayDate = null;
+                              if (trans.transaction_date) {
+                                displayDate = trans.transaction_date;
+                              } else {
+                                displayDate = trans.created_at;
+                              }
+                              return new Date(displayDate).toLocaleDateString();
+                            })()}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -946,37 +1000,6 @@ export const Dashboard: React.FC = () => {
               <div className="mt-4 pt-4 border-t">
                 <p className="text-sm font-medium text-[#333333] mb-3">Revenue Breakdown</p>
                 
-                {/* Debug Info */}
-                <div className="mb-2 p-2 bg-yellow-100 rounded text-xs">
-                  <strong>🐛 SIMPLE DEBUG:</strong><br/>
-                  Dashboard data exists: {dashboardStats ? '✅ YES' : '❌ NO'}<br/>
-                  {dashboardStats && (
-                    <>
-                      Revenue value: ₹{dashboardStats.monthlyRevenue || 0}<br/>
-                      Has details: {dashboardStats.details ? '✅ YES' : '❌ NO'}<br/>
-                      {dashboardStats.details && (
-                        <>
-                          Has revenue details: {dashboardStats.details.revenue ? '✅ YES' : '❌ NO'}<br/>
-                          {dashboardStats.details.revenue && (
-                            <>
-                              Has periodBreakdown: {dashboardStats.details.revenue.periodBreakdown ? '✅ YES' : '❌ NO'}<br/>
-                              {dashboardStats.details.revenue.periodBreakdown && (
-                                <>
-                                  <div className="mt-2 p-2 bg-green-100 rounded">
-                                    <strong>✅ PERIOD BREAKDOWN FOUND!</strong><br/>
-                                    Today: ₹{dashboardStats.details.revenue.periodBreakdown.today?.revenue || 0} ({dashboardStats.details.revenue.periodBreakdown.today?.count || 0} transactions)<br/>
-                                    This Week: ₹{dashboardStats.details.revenue.periodBreakdown.thisWeek?.revenue || 0} ({dashboardStats.details.revenue.periodBreakdown.thisWeek?.count || 0} transactions)<br/>
-                                    This Month: ₹{dashboardStats.details.revenue.periodBreakdown.thisMonth?.revenue || 0} ({dashboardStats.details.revenue.periodBreakdown.thisMonth?.count || 0} transactions)
-                                  </div>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </>
-                      )}
-                    </>
-                  )}
-                </div>
                 
                 {/* Period Cards inside Revenue Card */}
                 {!dashboardStats?.details?.revenue?.periodBreakdown && (
@@ -1421,6 +1444,55 @@ export const Dashboard: React.FC = () => {
               Showing appointments for {formatSelectedDateRange()}
             </p>
             
+              <button 
+                onClick={() => {
+                  // Create test appointments
+                  const today = new Date();
+                  const tomorrow = new Date(today);
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  
+                  const testAppointments = [
+                    {
+                      id: 'test-' + Date.now(),
+                      patient_id: 'patient-1',
+                      patient_name: 'John Doe',
+                      doctor_name: 'Dr. Smith',
+                      department: 'Cardiology',
+                      appointment_date: today.toISOString().split('T')[0],
+                      appointment_time: '10:00',
+                      appointment_type: 'consultation',
+                      status: 'scheduled',
+                      estimated_duration: 30,
+                      estimated_cost: 500,
+                      notes: 'Regular checkup',
+                      created_at: new Date().toISOString()
+                    },
+                    {
+                      id: 'test-' + (Date.now() + 1),
+                      patient_id: 'patient-2',
+                      patient_name: 'Jane Smith',
+                      doctor_name: 'Dr. Johnson',
+                      department: 'Orthopedics',
+                      appointment_date: tomorrow.toISOString().split('T')[0],
+                      appointment_time: '14:30',
+                      appointment_type: 'follow-up',
+                      status: 'confirmed',
+                      estimated_duration: 45,
+                      estimated_cost: 350,
+                      notes: 'Post-surgery follow-up',
+                      created_at: new Date().toISOString()
+                    }
+                  ];
+                  
+                  localStorage.setItem('hospital_appointments', JSON.stringify(testAppointments));
+                  window.location.reload();
+                }}
+                className="mt-2 px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+              >
+                Create Test Appointments & Reload
+              </button>
+            </div>
+            
             <div className="space-y-3 max-h-96 overflow-y-auto">
               {appointmentsLoading ? (
                 <div className="flex items-center justify-center py-8">
@@ -1430,11 +1502,16 @@ export const Dashboard: React.FC = () => {
                 (() => {
                   const upcomingAppointments = getUpcomingAppointments();
                   
+                  console.log('=== APPOINTMENTS DISPLAY DEBUG ===');
+                  console.log('Upcoming appointments count:', upcomingAppointments.length);
+                  console.log('Upcoming appointments:', upcomingAppointments);
+                  
                   if (upcomingAppointments.length === 0) {
                     return (
                       <div className="text-center py-8 text-[#999999]">
                         <Calendar className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>No appointments for this date range.</p>
+                        <p className="text-xs mt-2">Check console for debug info</p>
                       </div>
                     );
                   }

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 import { exportToExcel, formatDate } from '../utils/excelExport';
 
 interface DischargedPatient extends PatientWithRelations {

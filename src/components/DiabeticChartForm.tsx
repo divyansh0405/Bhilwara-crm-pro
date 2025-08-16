@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 import toast from 'react-hot-toast';
 
 interface DiabeticChartFormProps {

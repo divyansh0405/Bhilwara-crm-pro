@@ -3,8 +3,8 @@ import toast from 'react-hot-toast';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
 import HospitalService from '../services/hospitalService';
-import type { PatientWithRelations } from '../config/supabaseNew';
-import { supabase } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
+import { supabase } from '../config/supabase';
 import { 
   User, 
   Stethoscope, 

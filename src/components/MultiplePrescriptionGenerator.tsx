@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import type { Patient, AssignedDoctor } from '../config/supabaseNew';
+import type { Patient, AssignedDoctor } from '../config/supabase';
 import ValantPrescription from './ValantPrescription';
 import VHPrescription from './VHPrescription';
 

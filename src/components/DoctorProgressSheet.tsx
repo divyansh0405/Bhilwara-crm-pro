@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 import toast from 'react-hot-toast';
 
 interface DoctorProgressSheetProps {
@@ -307,7 +307,7 @@ const DoctorProgressSheet: React.FC<DoctorProgressSheetProps> = ({
   const generateFormHTML = () => {
     return `
       <div class="header">
-        <div class="hospital-name">VALANT HOSPITAL BHILWARA</div>
+        <div class="hospital-name">VALANT HOSPITAL</div>
         <div class="hospital-address">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</div>
         <div class="form-title">DOCTOR'S PROGRESS SHEET</div>
       </div>
@@ -389,7 +389,7 @@ const DoctorProgressSheet: React.FC<DoctorProgressSheetProps> = ({
         <div className="p-6">
           {/* Header Section */}
           <div className="text-center border-b-2 border-gray-300 pb-6 mb-8">
-            <h1 className="text-3xl font-bold text-gray-800 mb-2">VALANT HOSPITAL BHILWARA</h1>
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">VALANT HOSPITAL</h1>
             <p className="text-gray-600 text-sm mb-4">
               A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000
             </p>

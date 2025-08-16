@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const QuickConstraintFinder: React.FC = () => {
   const [constraintInfo, setConstraintInfo] = useState<string>('');
@@ -67,7 +67,7 @@ const QuickConstraintFinder: React.FC = () => {
         if (data && data.length > 0) {
           toast.success(`Found existing transaction type: ${data[0].transaction_type}`);
         } else {
-          toast.info('Table is empty, need to test transaction types');
+          toast('Table is empty, need to test transaction types', { icon: 'ℹ️' });
         }
       }
     } catch (error: any) {

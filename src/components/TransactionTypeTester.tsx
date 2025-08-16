@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const TransactionTypeTester: React.FC = () => {
   const [testType, setTestType] = useState('');
@@ -118,7 +118,7 @@ const TransactionTypeTester: React.FC = () => {
         
       if (error) {
         console.log('Cannot query constraint directly, will test manually');
-        toast.info('Testing transaction types manually...');
+        toast('Testing transaction types manually...', { icon: 'ℹ️' });
         return;
       }
       

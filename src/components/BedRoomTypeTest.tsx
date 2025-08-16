@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const BedRoomTypeTest: React.FC = () => {
   const [beds, setBeds] = useState<any[]>([]);

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const DirectDBTest: React.FC = () => {
   const [result, setResult] = useState<any>(null);

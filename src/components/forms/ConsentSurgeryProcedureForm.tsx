@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PatientWithRelations } from '../../config/supabaseNew';
+import type { PatientWithRelations } from '../../config/supabase';
 import toast from 'react-hot-toast';
 
 interface ConsentSurgeryProcedureFormProps {
@@ -348,7 +348,7 @@ const ConsentSurgeryProcedureForm: React.FC<ConsentSurgeryProcedureFormProps> = 
   const generateFormHTML = () => {
     return `
       <div class="header">
-        <div class="hospital-name">VALANT HOSPITAL BHILWARA</div>
+        <div class="hospital-name">VALANT HOSPITAL</div>
         <div class="hospital-address">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</div>
         <div class="form-title">CONSENT FOR SURGERY/PROCEDURE</div>
       </div>
@@ -648,7 +648,7 @@ const ConsentSurgeryProcedureForm: React.FC<ConsentSurgeryProcedureFormProps> = 
       <div className="print-content">
         {/* Header */}
         <div className="text-center mb-8 border-b-2 border-black pb-4">
-          <h1 className="text-2xl font-bold mb-2">VALANT HOSPITAL BHILWARA</h1>
+          <h1 className="text-2xl font-bold mb-2">VALANT HOSPITAL</h1>
           <p className="text-sm mb-2">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
           <h2 className="text-xl font-semibold">CONSENT FOR SURGERY/PROCEDURE</h2>
         </div>

@@ -1,5 +1,5 @@
-import { supabase } from '../config/supabaseNew';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
+import type { PatientWithRelations } from '../config/supabase';
 
 export interface BedData {
   id: string;

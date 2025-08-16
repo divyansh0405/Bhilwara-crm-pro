@@ -11,7 +11,7 @@ import {
   type ServiceCategory 
 } from '../data/medicalServices';
 import HospitalService from '../services/hospitalService';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 import { useReceiptPrinting } from '../hooks/useReceiptPrinting';
 
 interface Patient {

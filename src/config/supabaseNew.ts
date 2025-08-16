@@ -18,8 +18,6 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-console.log('✅ supabaseNew.ts: Connected to Supabase project:', supabaseUrl);
-
 // COMPREHENSIVE DATABASE SCHEMA TYPES - MATCHING NEW ENHANCED SCHEMA
 
 export interface AssignedDoctor {
@@ -154,6 +152,7 @@ export interface PatientTransaction {
   notes?: string;
   status: 'PENDING' | 'COMPLETED' | 'CANCELLED';
   hospital_id: string;
+  transaction_date?: string;
   created_at: string;
   created_by: string;
 }
@@ -294,6 +293,7 @@ export interface CreateTransactionData {
   department?: string;
   status?: 'PENDING' | 'COMPLETED' | 'CANCELLED';
   transaction_reference?: string;
+  transaction_date?: string; // FIX: Add transaction_date field for proper date filtering
 }
 
 // CREATE APPOINTMENT DATA TYPE

@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client';
 import ReceiptTemplate from '../components/receipts/ReceiptTemplate';
 import type { ReceiptData } from '../components/receipts/ReceiptTemplate';
 import HospitalService from '../services/hospitalService';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 export const useReceiptPrinting = () => {
   // Default hospital information
@@ -90,7 +90,11 @@ export const useReceiptPrinting = () => {
         type: 'CONSULTATION',
         receiptNumber: generateReceiptNumber('CONS'),
         date: new Date().toLocaleDateString('en-IN'),
-        time: new Date().toLocaleTimeString('en-IN'),
+        time: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
         hospital: DEFAULT_HOSPITAL_INFO,
         patient: {
           id: patient.patient_id,
@@ -149,7 +153,11 @@ export const useReceiptPrinting = () => {
         type: receiptType,
         receiptNumber: generateReceiptNumber('ADM'),
         date: new Date().toLocaleDateString('en-IN'),
-        time: new Date().toLocaleTimeString('en-IN'),
+        time: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
         hospital: DEFAULT_HOSPITAL_INFO,
         patient: {
           id: admission.patient?.patient_id || 'N/A',
@@ -220,7 +228,11 @@ export const useReceiptPrinting = () => {
         type: 'DISCHARGE',
         receiptNumber: generateReceiptNumber('DISCH'),
         date: new Date().toLocaleDateString('en-IN'),
-        time: new Date().toLocaleTimeString('en-IN'),
+        time: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
         hospital: DEFAULT_HOSPITAL_INFO,
         patient: {
           id: dischargeSummary.patient?.patient_id || 'N/A',
@@ -315,7 +327,11 @@ export const useReceiptPrinting = () => {
         type: 'SERVICE',
         receiptNumber: generateReceiptNumber('SERV'),
         date: new Date(transaction.created_at).toLocaleDateString('en-IN'),
-        time: new Date(transaction.created_at).toLocaleTimeString('en-IN'),
+        time: new Date(transaction.created_at).toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
         hospital: DEFAULT_HOSPITAL_INFO,
         patient: {
           id: transaction.patient?.patient_id || 'N/A',
@@ -362,8 +378,7 @@ export const useReceiptPrinting = () => {
       const { data: transactions, error } = await supabase
         .from('patient_transactions')
         .select('*')
-        .gte('created_at', `${date}T00:00:00`)
-        .lte('created_at', `${date}T23:59:59`)
+        .eq('transaction_date', date)
         .eq('status', 'COMPLETED')
         .order('created_at', { ascending: true });
 
@@ -377,7 +392,11 @@ export const useReceiptPrinting = () => {
         type: 'DAILY_SUMMARY',
         receiptNumber: generateReceiptNumber('DAILY'),
         date: new Date(date).toLocaleDateString('en-IN'),
-        time: new Date().toLocaleTimeString('en-IN'),
+        time: new Date().toLocaleTimeString([], {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        }),
         hospital: DEFAULT_HOSPITAL_INFO,
         patient: {
           id: 'SYSTEM',

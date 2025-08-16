@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import HospitalService from '../services/hospitalService';
-import type { PatientWithRelations, FutureAppointment } from '../config/supabaseNew';
+import type { PatientWithRelations, FutureAppointment } from '../config/supabase';
 
 interface QuickReportsModalProps {
   isOpen: boolean;

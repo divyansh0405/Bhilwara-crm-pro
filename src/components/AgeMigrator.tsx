@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../config/supabaseNew';
+import { supabase } from '../config/supabase';
 
 const AgeMigrator: React.FC = () => {
   const [status, setStatus] = useState<string>('Ready to migrate');

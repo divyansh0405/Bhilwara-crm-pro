@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import type { PatientWithRelations } from '../config/supabaseNew';
+import type { PatientWithRelations } from '../config/supabase';
 import toast from 'react-hot-toast';
 
 interface IPDConsentFormProps {
@@ -49,7 +49,7 @@ interface ConsentFormData {
 // Language translations
 const translations = {
   english: {
-    title: "VALANT HOSPITAL BHILWARA",
+    title: "VALANT HOSPITAL",
     subtitle: "A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000",
     formTitle: "General Consent",
     patientInfo: "Patient Information",
@@ -57,8 +57,8 @@ const translations = {
     patientId: "Patient ID:",
     ipdNo: "IPD No.:",
     consentDeclaration: "Consent Declaration",
-    consentPoint1: "I, {name}, of {address}, give my consent for my own/the patient's admission to VALANT HOSPITAL BHILWARA, Udaipur, on {date} at {time}.",
-    consentPoint2: "I give my consent to VALANT HOSPITAL BHILWARA/Doctors/Staff for the following:",
+    consentPoint1: "I, {name}, of {address}, give my consent for my own/the patient's admission to Valant Hospital, Udaipur, on {date} at {time}.",
+    consentPoint2: "I give my consent to Valant Hospital/Doctors/Staff for the following:",
     consentList: [
       "Medical Advice",
       "Performing all necessary medical examinations (with full confidentiality)",
@@ -66,7 +66,7 @@ const translations = {
       "Regular Radiology and Laboratory Tests",
       "Nursing Care and Medication"
     ],
-    consentPoint3: "I have been thoroughly explained about the illness, its severity, and potential complications. I am fully satisfied with and agree to all decisions made by the doctors and staff of VALANT HOSPITAL BHILWARA.",
+    consentPoint3: "I have been thoroughly explained about the illness, its severity, and potential complications. I am fully satisfied with and agree to all decisions made by the doctors and staff of Valant Hospital.",
     consentPoint4: "I have been informed that I/the patient may need to be admitted to the ICU due to my/the patient's condition. I have been informed about the potential expenses for treatment in the ICU. The doctors will keep me updated on the patient's condition from time to time.",
     consentPoint5: "I have been informed that depending on my/the patient's condition, an operation/blood transfusion may be necessary.",
     consentPoint6: "I give my consent for consultation/discussion with other doctors in the best interest of myself/the patient.",
@@ -506,7 +506,7 @@ const IPDConsentForm: React.FC<IPDConsentFormProps> = ({
     // Get consent point 1 text for selected language
     const consentPoint1Text = selectedLanguage === 'hindi' 
       ? `मैं, <span class="field-value">${formData.consentName1 || ''}</span>, निवासी <span class="field-value">${formData.patientAddress || ''}</span>, अपने/रोगी के वैलेंट हॉस्पिटल, उदयपुर में दिनांक <span class="field-value">${formData.admissionDate || ''}</span> को समय <span class="field-value">${formData.admissionTime || ''}</span> पर भर्ती होने की सहमति देता/देती हूं।`
-      : `I, <span class="field-value">${formData.consentName1 || ''}</span>, of <span class="field-value">${formData.patientAddress || ''}</span>, give my consent for my own/the patient's admission to VALANT HOSPITAL BHILWARA, Udaipur, on <span class="field-value">${formData.admissionDate || ''}</span> at <span class="field-value">${formData.admissionTime || ''}</span>.`;
+      : `I, <span class="field-value">${formData.consentName1 || ''}</span>, of <span class="field-value">${formData.patientAddress || ''}</span>, give my consent for my own/the patient's admission to Valant Hospital, Udaipur, on <span class="field-value">${formData.admissionDate || ''}</span> at <span class="field-value">${formData.admissionTime || ''}</span>.`;
 
     const relativeConsentText = selectedLanguage === 'hindi'
       ? `इसलिए, मैं, <span class="field-value">${formData.relativeName || ''}</span>, (<span class="field-value">${formData.relationshipToPatient || ''}</span>) रोगी की ओर से सहमति देता/देती हूं।`
@@ -1106,7 +1106,7 @@ const IPDConsentForm: React.FC<IPDConsentFormProps> = ({
                         placeholder={selectedLanguage === 'hindi' ? "आपका पता" : "Your Address"}
                         className="inline-block mx-1 px-2 py-1 border-b border-gray-400 focus:outline-none focus:border-blue-500 bg-transparent min-w-[250px]"
                       />
-                      {selectedLanguage === 'hindi' ? ', अपने/रोगी के वैलेंट हॉस्पिटल, उदयपुर में दिनांक ' : ', give my consent for my own/the patient\'s admission to VALANT HOSPITAL BHILWARA, Udaipur, on '}
+                      {selectedLanguage === 'hindi' ? ', अपने/रोगी के वैलेंट हॉस्पिटल, उदयपुर में दिनांक ' : ', give my consent for my own/the patient\'s admission to Valant Hospital, Udaipur, on '}
                       <input
                         type="date"
                         name="admissionDate"
