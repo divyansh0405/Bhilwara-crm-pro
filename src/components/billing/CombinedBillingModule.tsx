@@ -643,8 +643,8 @@ const CombinedBillingModule: React.FC = () => {
               />
             </div>
             <div class="hospital-info">
-              <p>Survey No. 92/1A, Near Akshar Marg, Rajkot-360001, Gujarat, India</p>
-              <p>Phone: +91-281-2471101 | Email: info@valanthospital.com</p>
+              <p>RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001</p>
+              <p>Phone: +91 86198 25662 | Email: info@valanthospital.com</p>
               <p>Reg. No: GJ/RJT/2023/001 | GST: 24ABCXY1234Z1Z5</p>
             </div>
           </div>

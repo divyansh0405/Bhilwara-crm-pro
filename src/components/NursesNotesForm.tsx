@@ -111,7 +111,7 @@ const NursesNotesForm: React.FC<NursesNotesFormProps> = ({
 <body>
   <div class="print-header">
     <h1>VALANT HOSPITAL</h1>
-    <p>A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
+    <p>RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001 | +91 86198 25662</p>
     <h2>NURSES NOTES</h2>
     <p>Patient: ${patient.first_name} ${patient.last_name} | Bed: ${bedNumber}</p>
     <p>Date: ${new Date().toLocaleDateString()}</p>

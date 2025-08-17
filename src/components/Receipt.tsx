@@ -417,8 +417,8 @@ const Receipt: React.FC<ReceiptProps> = ({ patientId, onClose }) => {
               />
             </div>
             <div className="text-sm text-gray-700 mt-4">
-              <p>10, Madhav Vihar Shobhagpura, Udaipur (313001)</p>
-              <p>Phone: +91 9119118000 | Email: valanthospital@gmail.com</p>
+              <p>RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001</p>
+              <p>Phone: +91 86198 25662 | Email: valanthospital@gmail.com</p>
               <p>Website: www.valanthospital.com</p>
             </div>
           </div>

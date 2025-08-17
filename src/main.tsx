@@ -4,6 +4,7 @@ import './index.css'
 import App from './App.tsx'
 import Debug from './Debug.tsx'
 import { ReactQueryProvider } from './config/reactQuery.tsx'
+import { AuthProvider } from './contexts/AuthContext'
 
 console.log('🔧 main.tsx loading...');
 
@@ -36,9 +37,11 @@ if (rootElement) {
       // Normal app
       createRoot(rootElement).render(
         <StrictMode>
-          <ReactQueryProvider>
-            <App />
-          </ReactQueryProvider>
+          <AuthProvider>
+            <ReactQueryProvider>
+              <App />
+            </ReactQueryProvider>
+          </AuthProvider>
         </StrictMode>,
       )
     }

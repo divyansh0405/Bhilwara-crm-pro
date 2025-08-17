@@ -308,7 +308,7 @@ const DoctorProgressSheet: React.FC<DoctorProgressSheetProps> = ({
     return `
       <div class="header">
         <div class="hospital-name">VALANT HOSPITAL</div>
-        <div class="hospital-address">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</div>
+        <div class="hospital-address">RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001 | +91 86198 25662</div>
         <div class="form-title">DOCTOR'S PROGRESS SHEET</div>
       </div>
 
@@ -391,7 +391,7 @@ const DoctorProgressSheet: React.FC<DoctorProgressSheetProps> = ({
           <div className="text-center border-b-2 border-gray-300 pb-6 mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">VALANT HOSPITAL</h1>
             <p className="text-gray-600 text-sm mb-4">
-              A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000
+              RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001 | +91 86198 25662
             </p>
             <h2 className="text-2xl font-semibold text-gray-800 uppercase tracking-wide">Doctor's Progress Sheet</h2>
           </div>

@@ -208,8 +208,8 @@ const ConsentFormPrint: React.FC<ConsentFormPrintProps> = ({ formData }) => {
           <div className="header">
             <h1>PROCEDURE CONSENT</h1>
             <h2>VALANT HOSPITAL</h2>
-            <p>10, Madhav Vihar, Shobhagpura, Udaipur</p>
-            <p>+91-911911 8000</p>
+            <p>RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001</p>
+            <p>+91 86198 25662</p>
           </div>
 
           {/* Patient Information */}

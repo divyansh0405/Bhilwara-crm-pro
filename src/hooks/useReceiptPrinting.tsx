@@ -8,12 +8,12 @@ import { supabase } from '../config/supabase';
 export const useReceiptPrinting = () => {
   // Default hospital information
   const DEFAULT_HOSPITAL_INFO = {
-    name: 'Healthcare Management System',
-    address: 'Medical Center, Healthcare District, City - 400001',
-    phone: '+91 98765 43210',
-    email: 'info@healthcarecms.com',
-    registration: 'MH/HC/2024/001',
-    gst: '27ABCDE1234F1Z5'
+    name: 'VALANT HOSPITAL',
+    address: 'RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001',
+    phone: '+91 86198 25662',
+    email: 'info@valanthospital.com',
+    registration: 'REG/2024/001',
+    gst: 'GST123456789'
   };
 
   const generateReceiptNumber = (type: string): string => {

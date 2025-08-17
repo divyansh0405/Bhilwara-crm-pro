@@ -409,7 +409,7 @@ const HighRiskConsentForm: React.FC<HighRiskConsentFormProps> = ({
         {/* Header */}
         <div className="text-center mb-8 border-b-2 border-black pb-4">
           <h1 className="text-2xl font-bold mb-2">VALANT HOSPITAL</h1>
-          <p className="text-sm mb-2">A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000</p>
+          <p className="text-sm mb-2">RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001 | +91 86198 25662</p>
           <h2 className="text-xl font-semibold">HIGH RISK CONSENT FORM</h2>
           <h2 className="text-xl font-semibold hindi-text">उच्च जोखिम सहमति फॉर्म</h2>
         </div>

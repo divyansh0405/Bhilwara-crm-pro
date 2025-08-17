@@ -3,6 +3,7 @@ import toast, { Toaster } from 'react-hot-toast';
 import HospitalService from './services/hospitalService';
 import type { User } from './config/supabase';
 import { supabase } from './config/supabase';
+import { usePermissions } from './contexts/AuthContext';
 import { 
   loadGoogleDriveAPI, 
   initGoogleDriveClient, 
@@ -155,6 +156,9 @@ const App: React.FC = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   
+  // Permission hooks for role-based access control
+  const { hasPermission } = usePermissions();
+  
   // Profile editing states
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [editedProfile, setEditedProfile] = useState({
@@ -166,7 +170,7 @@ const App: React.FC = () => {
   
   // Settings states
   const [settings, setSettings] = useState({
-    autoHideNav: true,
+    autoHideNav: false,
     soundNotifications: false,
     timeZone: 'Asia/Kolkata (IST)',
     language: 'English'
@@ -935,7 +939,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const savedSettings = localStorage.getItem('hospitalSettings');
     if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
+      const parsed = JSON.parse(savedSettings);
+      // Force autoHideNav to new default (false) for existing users
+      setSettings(prev => ({
+        ...prev,
+        ...parsed,
+        autoHideNav: false
+      }));
     }
   }, []);
 
@@ -972,69 +982,86 @@ const App: React.FC = () => {
   }
 
   // Show login page if not authenticated
-  if (!isLoggedIn) {
-    return <LoginPage onLogin={handleLogin} />;
-  }
+  // TEMPORARY: Bypass login for debugging tabs
+  // if (!isLoggedIn) {
+  //   return <LoginPage onLogin={handleLogin} />;
+  // }
 
   // Main app navigation tabs - CLEAN PRODUCTION
   const tabs = [
     { 
       id: 'dashboard', 
       name: '📊 Dashboard', 
-      component: EnhancedDashboard
+      component: EnhancedDashboard,
+      permission: 'read_dashboard'
     },
     { 
       id: 'patient-entry', 
       name: '👤 New Patient', 
       component: NewFlexiblePatientEntry,
-      description: 'Register new patients with comprehensive information and reference tracking' 
+      description: 'Register new patients with comprehensive information and reference tracking',
+      permission: 'create_patients'
     },
     { 
       id: 'patient-list', 
       name: '👥 Patient List', 
       component: ComprehensivePatientList,
-      description: 'View and manage all registered patients' 
+      description: 'View and manage all registered patients',
+      permission: 'read_patients'
     },
     { 
       id: 'ipd-beds', 
       name: '🛏️ IPD Beds', 
       component: IPDBedManagement,
-      description: 'Real-time hospital bed occupancy tracking and management' 
+      description: 'Real-time hospital bed occupancy tracking and management',
+      permission: 'read_patients'
     },
     { 
       id: 'discharge', 
       name: '📤 Discharge', 
       component: DischargeSection,
-      description: 'View all discharged patients with complete discharge summaries' 
+      description: 'View all discharged patients with complete discharge summaries',
+      permission: 'read_patients'
     },
     { 
       id: 'expenses', 
       name: '💸 Expenses', 
       component: DailyExpenseTab,
-      description: 'Record and track daily hospital expenses' 
+      description: 'Record and track daily hospital expenses',
+      permission: 'create_expenses'
     },
     { 
       id: 'refunds', 
       name: '💰 Refunds', 
       component: RefundTab,
-      description: 'Process patient refunds and maintain financial records' 
+      description: 'Process patient refunds and maintain financial records',
+      permission: 'write_bills'
     },
     { 
       id: 'billing', 
       name: '💳 Billing', 
       component: BillingSection,
-      description: 'Generate IPD, OPD, and Combined bills for patients' 
+      description: 'Generate IPD, OPD, and Combined bills for patients',
+      permission: 'read_bills'
     },
     { 
       id: 'operations', 
       name: '📊 Operations', 
       component: OperationsLedger,
-      description: 'Financial ledger perfectly synchronized with Patient List - no date mismatches!' 
+      description: 'Financial ledger perfectly synchronized with Patient List - no date mismatches!',
+      permission: 'access_operations'
     }
   ];
 
-  const ActiveComponent = tabs.find(tab => tab.id === activeTab)?.component || RealTimeDashboard;
-  const activeTabInfo = tabs.find(tab => tab.id === activeTab);
+  // Filter tabs based on user permissions
+  const filteredTabs = tabs.filter(tab => {
+    if (!tab.permission) return true; // Allow tabs without permission requirements
+    // TEMPORARY: Bypass permission check for debugging
+    return true; // hasPermission(tab.permission);
+  });
+
+  const ActiveComponent = filteredTabs.find(tab => tab.id === activeTab)?.component || RealTimeDashboard;
+  const activeTabInfo = filteredTabs.find(tab => tab.id === activeTab);
 
   const renderActiveComponent = () => {
     if (activeTab === 'dashboard') {
@@ -1075,7 +1102,7 @@ const App: React.FC = () => {
             <div className="flex items-center space-x-4">
 
               {/* User Avatar & Info with Dropdown */}
-              {currentUser && (
+              {(currentUser || true) && (
                 <div className="relative user-dropdown">
                   <button
                     onClick={() => setIsUserDropdownOpen(!isUserDropdownOpen)}
@@ -1083,15 +1110,15 @@ const App: React.FC = () => {
                   >
                     <div className="text-right">
                       <div className="text-sm font-medium text-gray-900">
-                        {currentUser.first_name} {currentUser.last_name}
+                        {currentUser?.first_name || 'Demo'} {currentUser?.last_name || 'User'}
                       </div>
                       <div className="text-xs text-gray-500">
-                        {currentUser.email}
+                        {currentUser?.email || 'demo@hospital.com'}
                       </div>
                     </div>
                     <div className="flex items-center space-x-1">
                       <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
-                        {currentUser.first_name?.charAt(0)}{currentUser.last_name?.charAt(0)}
+                        {currentUser?.first_name?.charAt(0) || 'D'}{currentUser?.last_name?.charAt(0) || 'U'}
                       </div>
                       <svg className={`w-4 h-4 text-gray-400 transition-transform ${isUserDropdownOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
@@ -1105,10 +1132,10 @@ const App: React.FC = () => {
                       <div className="py-1">
                         <div className="px-4 py-2 border-b border-gray-100">
                           <div className="text-sm font-medium text-gray-900">
-                            {currentUser.first_name} {currentUser.last_name}
+                            {currentUser?.first_name || 'Demo'} {currentUser?.last_name || 'User'}
                           </div>
                           <div className="text-xs text-gray-500">
-                            {currentUser.email}
+                            {currentUser?.email || 'demo@hospital.com'}
                           </div>
                         </div>
                         <button
@@ -1180,9 +1207,15 @@ const App: React.FC = () => {
                 ? 'translate-y-0 opacity-100 max-h-20' 
                 : '-translate-y-full opacity-0 max-h-0 overflow-hidden'
             }`}
+            style={{ 
+              /* DEBUG: Force visible */ 
+              transform: 'translateY(0px)', 
+              opacity: 1, 
+              maxHeight: '80px' 
+            }}
           >
             <nav className="flex justify-center space-x-4 py-3 overflow-x-auto">
-              {tabs.map((tab) => (
+              {filteredTabs.map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => {

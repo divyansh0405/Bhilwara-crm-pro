@@ -181,7 +181,7 @@ class AuthService {
    * Check if user is admin
    */
   isAdmin(user: AuthUser | null): boolean {
-    return this.hasRole(user, 'ADMIN');
+    return this.hasRole(user, ['admin', 'ADMIN']);
   }
 
   /**
@@ -200,6 +200,7 @@ class AuthService {
     const basePermissions = ['read_own_profile'];
 
     switch (user.role) {
+      case 'admin':
       case 'ADMIN':
         return [
           ...basePermissions,
@@ -217,6 +218,7 @@ class AuthService {
           'read_dashboard',
           'create_expenses',
           'manage_departments',
+          'access_operations',
         ];
       
       case 'DOCTOR':

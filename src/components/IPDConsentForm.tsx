@@ -50,7 +50,7 @@ interface ConsentFormData {
 const translations = {
   english: {
     title: "VALANT HOSPITAL",
-    subtitle: "A-10, Madhav Vihar, Shobhagpura, Udaipur | +91-911911 8000",
+    subtitle: "RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001 | +91 86198 25662",
     formTitle: "General Consent",
     patientInfo: "Patient Information",
     patientName: "Patient's Name:",
@@ -88,7 +88,7 @@ const translations = {
   },
   hindi: {
     title: "वैलेंट हॉस्पिटल",
-    subtitle: "ए-10, माधव विहार, शोभागपुरा, उदयपुर | +91-911911 8000",
+    subtitle: "आरसी व्यास कॉलोनी कृष्णा हॉस्पिटल के पास भीलवाड़ा 311001 | +91 86198 25662",
     formTitle: "सामान्य सहमति",
     patientInfo: "रोगी की जानकारी",
     patientName: "रोगी का नाम:",

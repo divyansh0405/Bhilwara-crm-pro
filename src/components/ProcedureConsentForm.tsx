@@ -408,8 +408,8 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
             <div class="header">
               <h1>PROCEDURE CONSENT</h1>
               <h2>VALANT HOSPITAL</h2>
-              <p>10, Madhav Vihar, Shobhagpura, Udaipur</p>
-              <p>+91-911911 8000</p>
+              <p>RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001</p>
+              <p>+91 86198 25662</p>
             </div>
 
             <!-- Patient Information -->
@@ -665,8 +665,8 @@ const ProcedureConsentForm: React.FC<ProcedureConsentFormProps> = ({
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-gray-800 mb-2">PROCEDURE CONSENT</h1>
             <h2 className="text-2xl font-semibold text-blue-700 mb-1">VALANT HOSPITAL</h2>
-            <p className="text-gray-600">10, Madhav Vihar, Shobhagpura, Udaipur</p>
-            <p className="text-gray-600">+91-911911 8000</p>
+            <p className="text-gray-600">RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001</p>
+            <p className="text-gray-600">+91 86198 25662</p>
           </div>
           
           {/* Form Start */}

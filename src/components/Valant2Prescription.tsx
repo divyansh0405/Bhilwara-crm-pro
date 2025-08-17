@@ -29,8 +29,14 @@ const Valant2Prescription: React.FC<Valant2PrescriptionProps> = ({ patient, onCl
     // Prioritize database specialty over local degree if available
     const degree = doctorDetails.specialty || localDoctorInfo.degree;
     
+    // Add (PHYSIO) after DR.K.D name
+    let displayName = localDoctorInfo.name;
+    if (doctorName === 'DR.K.D') {
+      displayName = `${doctorName} (PHYSIO)`;
+    }
+    
     const result = {
-      name: localDoctorInfo.name,
+      name: displayName,
       degree: degree,
       specialty: '', // Don't show specialty separately since it's now the degree
       hospital_experience: doctorDetails.hospital_experience || ''

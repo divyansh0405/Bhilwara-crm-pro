@@ -413,8 +413,8 @@ const IPDBillingModule: React.FC = () => {
       
       hospital: {
         name: 'VALANT HOSPITAL',
-        address: 'Madhuban, Siwan, Bihar',
-        phone: '+91 99999 99999',
+        address: 'RC VYAS COLONY NEAR KRISHNA HOSPITAL BHILWARA 311001',
+        phone: '+91 86198 25662',
         email: 'info@valanthospital.com',
         registration: 'REG/2024/001',
         gst: 'GST123456789'
