@@ -1413,7 +1413,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
   if (statsLoading) {
     return (
       <div className="min-h-screen bg-[#F5F5F5] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#007bff]"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0056B3]"></div>
       </div>
     );
   }
@@ -1426,7 +1426,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
           {/* Date Filter Section */}
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-[#333333]">
-              <Filter className="h-5 w-5 text-[#007bff]" />
+              <Filter className="h-5 w-5 text-[#0056B3]" />
               <span className="font-medium">Filter by Date:</span>
             </div>
             
@@ -1451,7 +1451,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
                   }}
                   className={`px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                     dateFilter === filter.value
-                      ? 'bg-[#007bff] text-white shadow-sm'
+                      ? 'bg-[#0056B3] text-white shadow-sm'
                       : 'bg-white text-[#333333] hover:bg-[#f8f9fa] border border-gray-200'
                   }`}
                 >
@@ -1464,7 +1464,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
           {/* Refresh Button */}
           <Button 
             onClick={handleRefreshData}
-            className="bg-[#007bff] hover:bg-[#0056b3] text-white px-4 py-2 rounded-lg flex items-center gap-2"
+            className="bg-[#0056B3] hover:bg-[#0056b3] text-white px-4 py-2 rounded-lg flex items-center gap-2"
           >
             <RefreshCw className="h-4 w-4" />
             Refresh Data
@@ -1476,13 +1476,13 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
           <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-200 mb-4">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
-                <CalendarDays className="h-4 w-4 text-[#007bff]" />
+                <CalendarDays className="h-4 w-4 text-[#0056B3]" />
                 <span className="text-sm font-medium text-[#333333]">From:</span>
                 <input
                   type="date"
                   value={customStartDate}
                   onChange={(e) => setCustomStartDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0056B3] focus:border-transparent"
                 />
               </div>
               <div className="flex items-center gap-2">
@@ -1491,12 +1491,12 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
                   type="date"
                   value={customEndDate}
                   onChange={(e) => setCustomEndDate(e.target.value)}
-                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#007bff] focus:border-transparent"
+                  className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-[#0056B3] focus:border-transparent"
                 />
               </div>
               <button
                 onClick={() => setShowDatePicker(false)}
-                className="px-3 py-2 bg-[#007bff] text-white rounded-lg text-sm hover:bg-[#0056b3] transition-colors"
+                className="px-3 py-2 bg-[#0056B3] text-white rounded-lg text-sm hover:bg-[#0056b3] transition-colors"
               >
                 Apply Filter
               </button>
@@ -1511,9 +1511,9 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
 
         {/* Filter Summary */}
         {dateFilter !== 'all' && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+          <div className="rounded-lg p-3 mb-4" style={{ backgroundColor: '#f0f7ff', borderWidth: '1px', borderStyle: 'solid', borderColor: '#b3d9ff' }}>
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 text-blue-800">
+              <div className="flex items-center gap-2" style={{ color: '#0056B3' }}>
                 <CalendarDays className="h-4 w-4" />
                 <span className="text-sm font-medium">
                   {dateFilter === 'today' && 'Showing data for today'}
@@ -1529,7 +1529,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
                   setCustomStartDate('');
                   setCustomEndDate('');
                 }}
-                className="text-blue-600 hover:text-blue-800 text-sm underline"
+                className="text-sm underline" style={{ color: '#0056B3' }}
               >
                 Clear Filter
               </button>
@@ -1855,7 +1855,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
 
             {loadingBreakdown ? (
               <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#007bff]"></div>
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#0056B3]"></div>
               </div>
             ) : cardBreakdown ? (
               <div className="space-y-6">

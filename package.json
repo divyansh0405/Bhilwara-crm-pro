@@ -21,7 +21,7 @@
     "@hookform/resolvers": "^5.1.1",
     "@prisma/client": "^6.12.0",
     "@supabase/supabase-js": "^2.52.0",
-    "@tanstack/react-query": "^5.83.0",
+    "@tanstack/react-query": "5.83.1",
     "@tanstack/react-table": "^8.21.3",
     "@types/react-datepicker": "^6.2.0",
     "@types/uuid": "^10.0.0",
@@ -60,6 +60,18 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.35.1",
     "vite": "^7.0.4"
-  }
+  },
+  "description": "🏥 Complete Hospital Management System with advanced features:\r - Real-time Dashboard with analytics\r - Flexible Patient Entry (only first name required)  \r - Comprehensive Patient List with search/filter\r - Future Appointments scheduling system\r - Direct Supabase integration\r - Mobile responsive design",
+  "main": "ADVANCED_DEBUG.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yaashhrawal/Hospital-CRM-Bhilwara.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/yaashhrawal/Hospital-CRM-Bhilwara/issues"
+  },
+  "homepage": "https://github.com/yaashhrawal/Hospital-CRM-Bhilwara#readme"
 }
-
