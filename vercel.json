@@ -2,7 +2,7 @@
   "version": 2,
   "framework": "vite",
   "outputDirectory": "dist",
-  "installCommand": "npm ci",
+  "installCommand": "npm install",
   "buildCommand": "npm run build",
   "env": {
     "VITE_SUPABASE_URL": "https://hgwomxpzaeeqgxsnhceq.supabase.co",
