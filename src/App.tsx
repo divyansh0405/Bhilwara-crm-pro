@@ -326,22 +326,40 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     try {
       console.log('🚪 Signing out...');
+
+      // Call Supabase logout
       const { error } = await HospitalService.signOut();
-      
+
       if (error) {
         console.error('❌ Logout error:', error);
-        toast.error('Logout failed');
-        return;
+        toast.error('Logout failed: ' + error.message);
       }
-      
+
+      // Force clear local state regardless of API response
       setIsLoggedIn(false);
       setCurrentUser(null);
       setActiveTab('dashboard');
+
+      // Clear any cached data
+      localStorage.removeItem('supabase.auth.token');
+      sessionStorage.clear();
+
       toast.success('Logged out successfully');
-      console.log('✅ Logout successful');
+      console.log('✅ Logout successful - redirecting to login');
+
+      // Force reload to ensure clean state
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error: any) {
       console.error('🚨 Logout exception:', error);
-      toast.error('Logout failed');
+      // Force logout even on error
+      setIsLoggedIn(false);
+      setCurrentUser(null);
+      toast.error('Logout completed with errors');
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     }
   };
 
@@ -982,75 +1000,75 @@ const App: React.FC = () => {
   }
 
   // Show login page if not authenticated
-  // TEMPORARY: Bypass login for debugging tabs
-  // if (!isLoggedIn) {
-  //   return <LoginPage onLogin={handleLogin} />;
-  // }
+  if (!isLoggedIn) {
+    return <LoginPage onLogin={handleLogin} />;
+  }
 
   // Main app navigation tabs - CLEAN PRODUCTION
   const tabs = [
-    { 
-      id: 'dashboard', 
-      name: '📊 Dashboard', 
+    {
+      id: 'dashboard',
+      name: '📊 Dashboard',
       component: EnhancedDashboard,
       permission: 'read_dashboard'
     },
-    { 
-      id: 'patient-entry', 
-      name: '👤 New Patient', 
+    {
+      id: 'patient-entry',
+      name: '👤 New Patient',
       component: NewFlexiblePatientEntry,
       description: 'Register new patients with comprehensive information and reference tracking',
       permission: 'create_patients'
     },
-    { 
-      id: 'patient-list', 
-      name: '👥 Patient List', 
+    {
+      id: 'patient-list',
+      name: '👥 Patient List',
       component: ComprehensivePatientList,
       description: 'View and manage all registered patients',
       permission: 'read_patients'
     },
-    { 
-      id: 'ipd-beds', 
-      name: '🛏️ IPD Beds', 
-      component: IPDBedManagement,
-      description: 'Real-time hospital bed occupancy tracking and management',
-      permission: 'read_patients'
-    },
-    { 
-      id: 'discharge', 
-      name: '📤 Discharge', 
-      component: DischargeSection,
-      description: 'View all discharged patients with complete discharge summaries',
-      permission: 'read_patients'
-    },
-    { 
-      id: 'expenses', 
-      name: '💸 Expenses', 
-      component: DailyExpenseTab,
-      description: 'Record and track daily hospital expenses',
-      permission: 'create_expenses'
-    },
-    { 
-      id: 'refunds', 
-      name: '💰 Refunds', 
-      component: RefundTab,
-      description: 'Process patient refunds and maintain financial records',
-      permission: 'write_bills'
-    },
-    { 
-      id: 'billing', 
-      name: '💳 Billing', 
-      component: BillingSection,
-      description: 'Generate IPD, OPD, and Combined bills for patients',
-      permission: 'read_bills'
-    },
-    { 
-      id: 'operations', 
-      name: '📊 Operations', 
-      component: OperationsLedger,
-      description: 'Financial ledger perfectly synchronized with Patient List - no date mismatches!',
-      permission: 'access_operations'
-    }
+    // HIDDEN TABS - Disabled for all users
+    // {
+    //   id: 'ipd-beds',
+    //   name: '🛏️ IPD Beds',
+    //   component: IPDBedManagement,
+    //   description: 'Real-time hospital bed occupancy tracking and management',
+    //   permission: 'read_patients'
+    // },
+    // {
+    //   id: 'discharge',
+    //   name: '📤 Discharge',
+    //   component: DischargeSection,
+    //   description: 'View all discharged patients with complete discharge summaries',
+    //   permission: 'read_patients'
+    // },
+    // {
+    //   id: 'expenses',
+    //   name: '💸 Expenses',
+    //   component: DailyExpenseTab,
+    //   description: 'Record and track daily hospital expenses',
+    //   permission: 'create_expenses'
+    // },
+    // {
+    //   id: 'refunds',
+    //   name: '💰 Refunds',
+    //   component: RefundTab,
+    //   description: 'Process patient refunds and maintain financial records',
+    //   permission: 'write_bills'
+    // },
+    // {
+    //   id: 'billing',
+    //   name: '💳 Billing',
+    //   component: BillingSection,
+    //   description: 'Generate IPD, OPD, and Combined bills for patients',
+    //   permission: 'read_bills'
+    // },
+    // {
+    //   id: 'operations',
+    //   name: '📊 Operations',
+    //   component: OperationsLedger,
+    //   description: 'Financial ledger perfectly synchronized with Patient List - no date mismatches!',
+    //   permission: 'access_operations'
+    // }
   ];
 
   // Filter tabs based on user permissions
@@ -1068,9 +1086,11 @@ const App: React.FC = () => {
       return <EnhancedDashboard onNavigate={setActiveTab} />;
     } else if (activeTab === 'patient-list') {
       return <ComprehensivePatientList onNavigate={setActiveTab} />;
-    } else if (activeTab === 'operations') {
-      return <OperationsLedger onNavigate={setActiveTab} />;
     }
+    // Removed: operations tab (hidden)
+    // else if (activeTab === 'operations') {
+    //   return <OperationsLedger onNavigate={setActiveTab} />;
+    // }
     return <ActiveComponent />;
   };
 
