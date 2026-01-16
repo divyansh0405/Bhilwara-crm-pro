@@ -344,10 +344,9 @@ class DashboardService {
         .from('appointments')
         .select(`
           doctor_id,
-          doctor:users!appointments_doctor_id_fkey(
+          doctor:doctors(
             id,
-            first_name,
-            last_name
+            name
           )
         `)
         .eq('status', 'COMPLETED')
@@ -376,10 +375,9 @@ class DashboardService {
           paid_amount,
           appointment:appointments(
             doctor_id,
-            doctor:users!appointments_doctor_id_fkey(
+            doctor:doctors(
               id,
-              first_name,
-              last_name
+              name
             )
           )
         `)

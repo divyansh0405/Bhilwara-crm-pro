@@ -1,17 +1,18 @@
 import { supabase } from '../config/supabase';
 import { PatientService, type CreatePatientData } from './patientService';
-import type { 
-  Appointment, 
-  AppointmentWithRelations, 
-  CreateAppointmentData, 
+import type {
+  Appointment,
+  AppointmentWithRelations,
+  CreateAppointmentData,
   PaginatedResponse,
-  SupabaseQuery 
+  SupabaseQuery
 } from '../config/supabase';
 
 export interface AppointmentFilters {
   patientId?: string;
   doctorId?: string;
   departmentId?: string;
+  hospitalId?: string;
   status?: 'SCHEDULED' | 'CONFIRMED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'NO_SHOW';
   appointmentType?: string;
   dateRange?: {
@@ -69,26 +70,19 @@ class AppointmentService {
             gender,
             blood_group
           ),
-          doctor:users!appointments_doctor_id_fkey(
-            id,
-            first_name,
-            last_name,
-            email
-          ),
-          department:departments(
+          doctor:doctors(
             id,
             name,
-            description
-          ),
-          bills(
-            id,
-            bill_number,
-            status,
-            total_amount
+            specialization,
+            department
           )
         `, { count: 'exact' });
 
       // Apply filters
+      if (filters.hospitalId) {
+        query = query.eq('hospital_id', filters.hospitalId);
+      }
+
       if (filters.patientId) {
         query = query.eq('patient_id', filters.patientId);
       }
@@ -161,24 +155,11 @@ class AppointmentService {
             allergies,
             current_medications
           ),
-          doctor:users!appointments_doctor_id_fkey(
-            id,
-            first_name,
-            last_name,
-            email,
-            role
-          ),
-          department:departments(
+          doctor:doctors(
             id,
             name,
-            description
-          ),
-          bills(
-            id,
-            bill_number,
-            status,
-            total_amount,
-            payment_method
+            specialization,
+            department
           )
         `)
         .eq('id', id)
@@ -208,7 +189,7 @@ class AppointmentService {
     try {
       // First create the new patient
       const newPatient = await PatientService.createPatient(patientData);
-      
+
       // Then create the appointment with the new patient ID
       const appointment = await this.createAppointment({
         ...appointmentData,
@@ -293,10 +274,7 @@ class AppointmentService {
 
       const { data, error } = await supabase
         .from('appointments')
-        .update({
-          ...updateData,
-          updated_at: new Date().toISOString(),
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -319,7 +297,6 @@ class AppointmentService {
     try {
       const updateData: any = {
         status: 'CANCELLED',
-        updated_at: new Date().toISOString(),
       };
 
       if (reason) {
@@ -331,7 +308,7 @@ class AppointmentService {
           .single();
 
         const currentNotes = appointment?.notes || '';
-        updateData.notes = currentNotes 
+        updateData.notes = currentNotes
           ? `${currentNotes}\nCancellation reason: ${reason}`
           : `Cancellation reason: ${reason}`;
       }
@@ -370,14 +347,10 @@ class AppointmentService {
             last_name,
             phone
           ),
-          doctor:users!appointments_doctor_id_fkey(
+          doctor:doctors(
             id,
-            first_name,
-            last_name
-          ),
-          department:departments(
-            id,
-            name
+            name,
+            specialization
           )
         `)
         .gte('scheduled_at', startOfDay)
@@ -410,10 +383,6 @@ class AppointmentService {
             first_name,
             last_name,
             phone
-          ),
-          department:departments(
-            id,
-            name
           )
         `)
         .eq('doctor_id', doctorId)
@@ -585,12 +554,12 @@ class AppointmentService {
   subscribeToAppointments(callback: (payload: any) => void) {
     return supabase
       .channel('appointments_changes')
-      .on('postgres_changes', 
-        { 
-          event: '*', 
-          schema: 'public', 
-          table: 'appointments' 
-        }, 
+      .on('postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'appointments'
+        },
         callback
       )
       .subscribe();

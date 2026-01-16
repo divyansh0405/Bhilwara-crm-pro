@@ -459,7 +459,7 @@ const App: React.FC = () => {
         .select(`
           *,
           patient:patients(id, patient_id, first_name, last_name, phone),
-          doctor:users(id, first_name, last_name, email)
+          doctor:doctors(id, name, specialization, email)
         `)
         .eq('hospital_id', '550e8400-e29b-41d4-a716-446655440000')
         .order('appointment_date', { ascending: true })

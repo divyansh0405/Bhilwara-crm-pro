@@ -504,6 +504,7 @@ export const EnhancedDashboard: React.FC<Props> = ({ onNavigate }) => {
         const { appointmentService } = await import('../services/appointmentService');
         const result = await appointmentService.getAppointments({
           filters: {
+            hospitalId: '550e8400-e29b-41d4-a716-446655440000', // Bhilwara Hospital
             dateRange: {
               start: new Date().toISOString(),
               end: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
