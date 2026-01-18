@@ -30,7 +30,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
   const [deletingTransactionId, setDeletingTransactionId] = useState<string | null>(null);
   const [selectedTransactions, setSelectedTransactions] = useState<Set<string>>(new Set());
   const [selectAll, setSelectAll] = useState(false);
-  
+
   if (!isOpen) return null;
 
   const totalSpent = patient.totalSpent || 0;
@@ -46,7 +46,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
       newSelected.delete(transactionId);
     }
     setSelectedTransactions(newSelected);
-    
+
     // Update select all state
     setSelectAll(newSelected.size === transactions.length);
   };
@@ -65,7 +65,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
   // Print receipts for selected transactions using the same format as existing receipts
   const printSelectedReceipts = () => {
     const selectedTransactionsData = transactions.filter(t => selectedTransactions.has(t.id));
-    
+
     if (selectedTransactionsData.length === 0) {
       toast.error('Please select at least one transaction to print');
       return;
@@ -82,7 +82,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
     // Default hospital information (same as useReceiptPrinting)
     const DEFAULT_HOSPITAL_INFO = {
       name: 'Healthcare Management System',
-      address: 'Medical Center, Healthcare District, City - 400001', 
+      address: 'Medical Center, Healthcare District, City - 400001',
       phone: '+91 98765 43210',
       email: 'info@healthcarecms.com',
       registration: 'MH/HC/2024/001',
@@ -96,7 +96,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
       date: new Date().toLocaleDateString('en-IN'),
       time: new Date().toLocaleTimeString([], {
         hour: '2-digit',
-        minute: '2-digit', 
+        minute: '2-digit',
         hour12: true
       }),
       hospital: DEFAULT_HOSPITAL_INFO,
@@ -140,13 +140,13 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
       const modalContainer = document.createElement('div');
       modalContainer.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4';
       document.body.appendChild(modalContainer);
-      
+
       const root = createRoot(modalContainer);
-      
+
       const handlePrint = () => {
         window.print();
       };
-      
+
       const handleClose = () => {
         root.unmount();
         document.body.removeChild(modalContainer);
@@ -190,12 +190,12 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
 
     try {
       setDeletingTransactionId(transactionId);
-      
+
       // Update transaction status to CANCELLED
       await HospitalService.updateTransactionStatus(transactionId, 'CANCELLED');
-      
+
       toast.success('Transaction cancelled successfully. Patient totals will be updated.');
-      
+
       // Close modal and trigger patient list refresh
       onClose();
       if (onPatientUpdated) {
@@ -239,31 +239,31 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                 // Use the same logic as in the table for consistency
                 let lastVisitDate = null;
                 let dateSource = '';
-                
+
                 // Priority 1: Use date_of_entry if it's explicitly set (user-defined visit date)
                 if (patient.date_of_entry && patient.date_of_entry.trim() !== '') {
                   lastVisitDate = patient.date_of_entry;
                   dateSource = 'date_of_entry';
                 }
-                
+
                 // Priority 2: Most recent transaction date (if no date_of_entry)
                 else if (patient.transactions && patient.transactions.length > 0) {
                   const activeTransactions = patient.transactions
                     .filter(t => t.status !== 'CANCELLED' && t.created_at)
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-                  
+
                   if (activeTransactions.length > 0) {
                     lastVisitDate = activeTransactions[0].created_at;
                     dateSource = 'transaction';
                   }
                 }
-                
+
                 // Priority 3: Use pre-calculated lastVisit field
                 else if (patient.lastVisit) {
                   lastVisitDate = patient.lastVisit;
                   dateSource = 'lastVisit';
                 }
-                
+
                 // Priority 4: Fallback to creation date
                 else if (patient.created_at) {
                   lastVisitDate = patient.created_at;
@@ -282,9 +282,9 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                   selected_date: lastVisitDate,
                   date_source: dateSource
                 });
-                
+
                 if (!lastVisitDate) return 'Never';
-                
+
                 try {
                   let date;
                   // Handle date strings properly to avoid timezone issues
@@ -295,12 +295,12 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                   } else {
                     date = new Date(lastVisitDate);
                   }
-                  
+
                   if (isNaN(date.getTime())) return 'Invalid Date';
-                  
+
                   return date.toLocaleDateString('en-IN', {
                     day: '2-digit',
-                    month: '2-digit', 
+                    month: '2-digit',
                     year: 'numeric'
                   });
                 } catch (error) {
@@ -322,7 +322,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
             <div><span className="font-medium">Gender:</span> {patient.gender === 'MALE' ? 'Male (M)' : patient.gender === 'FEMALE' ? 'Female (F)' : patient.gender || 'Not specified'}</div>
             <div><span className="font-medium">Date of Birth:</span> {patient.date_of_birth || 'Not provided'}</div>
             {patient.patient_tag && (
-              <div><span className="font-medium">Patient Tag:</span> 
+              <div><span className="font-medium">Patient Tag:</span>
                 <span className="ml-2 bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
                   {patient.patient_tag}
                 </span>
@@ -344,7 +344,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg font-semibold">Transaction History ({transactions.length})</h3>
-            
+
             {/* Bulk Actions */}
             {transactions.length > 0 && (
               <div className="flex items-center gap-3">
@@ -357,7 +357,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                   />
                   Select All ({transactions.length})
                 </label>
-                
+
                 {selectedTransactions.size > 0 && (
                   <>
                     <span className="text-sm text-blue-600 font-medium">
@@ -374,7 +374,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
               </div>
             )}
           </div>
-          
+
           {transactions.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -399,8 +399,8 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                           checked={selectedTransactions.has(transaction.id)}
                           onChange={(e) => handleTransactionSelect(transaction.id, e.target.checked)}
                           className="w-4 h-4"
-                          style={{ 
-                            minWidth: '16px', 
+                          style={{
+                            minWidth: '16px',
                             minHeight: '16px',
                             accentColor: '#2563eb',
                             cursor: 'pointer'
@@ -411,7 +411,7 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                         // FIXED: Use the SAME logic as Last Visit section - patient.date_of_entry first
                         const patient = transaction.patient;
                         let displayDate = null;
-                        
+
                         if (patient?.date_of_entry && patient.date_of_entry.trim() !== '') {
                           displayDate = patient.date_of_entry;
                         } else if (transaction.transaction_date) {
@@ -419,22 +419,22 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                         } else {
                           displayDate = transaction.created_at;
                         }
-                        
+
                         try {
                           if (typeof displayDate === 'string' && displayDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
                             const [year, month, day] = displayDate.split('-').map(Number);
                             const date = new Date(year, month - 1, day);
-                            return date.toLocaleDateString('en-IN', { 
+                            return date.toLocaleDateString('en-IN', {
                               timeZone: 'Asia/Kolkata',
                               day: '2-digit',
-                              month: '2-digit', 
+                              month: '2-digit',
                               year: 'numeric'
                             });
                           } else {
-                            return new Date(displayDate).toLocaleDateString('en-IN', { 
+                            return new Date(displayDate).toLocaleDateString('en-IN', {
                               timeZone: 'Asia/Kolkata',
                               day: '2-digit',
-                              month: '2-digit', 
+                              month: '2-digit',
                               year: 'numeric'
                             });
                           }
@@ -443,12 +443,11 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                         }
                       })()}</td>
                       <td className="p-2">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          transaction.transaction_type === 'CONSULTATION' ? 'bg-blue-100 text-blue-800' :
-                          transaction.transaction_type === 'ADMISSION' ? 'bg-green-100 text-green-800' :
-                          transaction.transaction_type === 'REFUND' ? 'bg-red-100 text-red-800' :
-                          'bg-gray-100 text-gray-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs ${transaction.transaction_type === 'CONSULTATION' ? 'bg-blue-100 text-blue-800' :
+                            transaction.transaction_type === 'ADMISSION' ? 'bg-green-100 text-green-800' :
+                              transaction.transaction_type === 'REFUND' ? 'bg-red-100 text-red-800' :
+                                'bg-gray-100 text-gray-800'
+                          }`}>
                           {transaction.transaction_type}
                         </span>
                       </td>
@@ -460,11 +459,10 @@ const PatientHistoryModal: React.FC<PatientHistoryModalProps> = ({ patient, isOp
                       </td>
                       <td className="p-2">{transaction.payment_mode}</td>
                       <td className="p-2">
-                        <span className={`px-2 py-1 rounded text-xs ${
-                          transaction.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
-                          transaction.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
+                        <span className={`px-2 py-1 rounded text-xs ${transaction.status === 'COMPLETED' ? 'bg-green-100 text-green-800' :
+                            transaction.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-red-100 text-red-800'
+                          }`}>
                           {transaction.status}
                         </span>
                       </td>
@@ -528,9 +526,9 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     const result = `${year}-${month}-${day}`;
-    
+
     // Debug logging
-    
+
     return result;
   };
 
@@ -560,7 +558,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
     if (patient.ipd_status === 'DISCHARGED') {
       return { status: 'Discharged', style: 'bg-gray-100 text-gray-800' };
     }
-    
+
     // Check if patient has discharged admissions
     if (patient.admissions && patient.admissions.length > 0) {
       const hasDischargedAdmission = patient.admissions.some(
@@ -570,12 +568,12 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         return { status: 'Discharged', style: 'bg-gray-100 text-gray-800' };
       }
     }
-    
+
     // Check if currently admitted to IPD
     if (patient.ipd_status === 'ADMITTED') {
       return { status: 'IPD', style: 'bg-red-100 text-red-800' };
     }
-    
+
     // Default to OPD
     return { status: patient.departmentStatus || 'OPD', style: 'bg-green-100 text-green-800' };
   };
@@ -647,16 +645,16 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
   const loadPatients = async () => {
     try {
       setLoading(true);
-      
+
       let patientsData;
-      
+
       // Use backend filtering for 'today' and single custom dates to get exact results
       if (dateRange === 'today') {
         const todayStr = selectedDate || getLocalDateString();
-        
+
         // Always use the backend method with error handling
         patientsData = await HospitalService.getPatientsForDate(todayStr, 500);
-        
+
         // Debug the returned patients
         if (patientsData.length > 0) {
         } else {
@@ -668,23 +666,33 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         // For date ranges and 'all', load all patients and apply frontend filtering
         patientsData = await HospitalService.getPatients(1000);
       }
-      
+
       // Filter out patients who have PENDING appointments (not confirmed/completed ones)
+      // This includes:
+      // 1. Patients with is_confirmed === false (from external bookings like appointments-app)
+      // 2. Patients with pending appointments in localStorage
       patientsData = patientsData.filter(patient => {
-        // Check localStorage appointments for this patient
+        // Check if patient is unconfirmed from external booking (appointments-app)
+        // These patients should appear in Dashboard's Upcoming Appointments first
+        if (patient.is_confirmed === false) {
+          console.log(`👤 Hiding patient ${patient.first_name} ${patient.last_name} - UNCONFIRMED from external booking`);
+          return false; // Hide this patient - they should appear in dashboard appointments first
+        }
+
+        // Also check localStorage appointments for this patient
         try {
           const appointments = JSON.parse(localStorage.getItem('hospital_appointments') || '[]');
           const hasPendingAppointment = appointments.some((apt: any) => {
             // Match by patient name or patient_id or patient_uuid
             const patientName = `${patient.first_name} ${patient.last_name}`;
-            const isPatientMatch = apt.patient_name === patientName || 
-                                   apt.patient_id === patient.patient_id || 
-                                   apt.patient_uuid === patient.id;
-            
+            const isPatientMatch = apt.patient_name === patientName ||
+              apt.patient_id === patient.patient_id ||
+              apt.patient_uuid === patient.id;
+
             // Only hide if patient matches AND appointment is still pending (not confirmed/completed)
             return isPatientMatch && (apt.status === 'scheduled' || !apt.status);
           });
-          
+
           if (hasPendingAppointment) {
             console.log(`👤 Hiding patient ${patient.first_name} ${patient.last_name} - has PENDING appointment`);
             return false; // Hide this patient
@@ -692,33 +700,34 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         } catch (error) {
           console.error('Error checking appointments for patient:', error);
         }
-        
-        return true; // Show this patient (no pending appointments)
+
+        return true; // Show this patient (confirmed and no pending appointments)
       });
-      
+
+
       // Debug: Check if backend or frontend filtering was used
       if (dateRange === 'today' || dateRange === 'custom') {
-        
+
         // CUSTOM DATE SPECIFIC DEBUG: Check all returned patients
         if (dateRange === 'custom') {
-          
+
           patientsData.forEach((p, i) => {
             const createdDate = p.created_at ? p.created_at.split('T')[0] : 'NO_CREATED';
             const entryDate = p.date_of_entry ? (p.date_of_entry.includes('T') ? p.date_of_entry.split('T')[0] : p.date_of_entry) : 'NO_ENTRY';
-            
+
             const matchesExpected = (createdDate === startDate || entryDate === startDate);
-            
-            
+
+
             if (!matchesExpected) {
             }
           });
         }
       } else {
       }
-      
+
       // Debug specific patient ROSHAN MEHTA in patient list
-      const roshanPatient = patientsData.find(p => 
-        p.first_name?.toUpperCase().includes('ROSHAN') && 
+      const roshanPatient = patientsData.find(p =>
+        p.first_name?.toUpperCase().includes('ROSHAN') &&
         p.last_name?.toUpperCase().includes('MEHTA')
       );
       if (roshanPatient) {
@@ -738,7 +747,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         } else if (roshanPatient.created_at) {
           lastVisitDate = roshanPatient.created_at;
         }
-        
+
         console.log('🔍 ROSHAN MEHTA Debug - Patient List:', {
           patient_name: `${roshanPatient.first_name} ${roshanPatient.last_name}`,
           date_of_entry: roshanPatient.date_of_entry,
@@ -772,9 +781,9 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
           }))
         });
       }
-      
+
       // Quick debug: Show all patient dates to help identify the issue
-      
+
       // Apply date filtering if not 'all' and not using backend filtering
       // Exclude custom dates since they're now handled by backend (always single dates)
       if (dateRange !== 'all' && dateRange !== 'today' && dateRange !== 'custom') {
@@ -782,7 +791,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         // Calculate dates based on current dateRange - don't rely on state
         let currentStartDate, currentEndDate;
         const today = getLocalDateString();
-        
+
         switch (dateRange) {
           case 'today':
             currentStartDate = selectedDate || today;
@@ -811,7 +820,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
             currentStartDate = today;
             currentEndDate = today;
         }
-        
+
         // Debug today's date info
         const todaysDateInfo = {
           jsToday: getLocalDateString(),
@@ -823,23 +832,23 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
           dateRange,
           dateTime: new Date().toLocaleString()
         };
-        
-        
+
+
         // Find the specific patient to debug
-        const ashokPatient = patientsData.find(p => 
-          p.first_name?.toUpperCase().includes('ASHOK') && 
+        const ashokPatient = patientsData.find(p =>
+          p.first_name?.toUpperCase().includes('ASHOK') &&
           p.last_name?.toUpperCase().includes('KUMAR')
         );
-        
+
         if (ashokPatient) {
           // Use the same date parsing logic as in the filter
           let debugCreatedDate = null;
           let debugEntryDate = null;
-          
+
           if (ashokPatient.created_at) {
             debugCreatedDate = new Date(ashokPatient.created_at).toISOString().split('T')[0];
           }
-          
+
           if (ashokPatient.date_of_entry) {
             let entryDate;
             if (typeof ashokPatient.date_of_entry === 'string' && ashokPatient.date_of_entry.includes('T')) {
@@ -849,19 +858,19 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
             }
             debugEntryDate = entryDate.toISOString().split('T')[0];
           }
-          
+
         }
-        
+
         // Simplified and more reliable filtering logic
-        
+
         const filtered = [];
-        
+
         for (let i = 0; i < patientsData.length; i++) {
           const patient = patientsData[i];
-          
+
           // Get patient date - standardized YYYY-MM-DD format like patient entry forms
           let patientDateStr = null;
-          
+
           // Try date_of_entry first (usually set by user) - ensure YYYY-MM-DD format
           if (patient.date_of_entry) {
             if (typeof patient.date_of_entry === 'string') {
@@ -873,20 +882,20 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
               }
             }
           }
-          
+
           // Fall back to created_at - ensure YYYY-MM-DD format
           if (!patientDateStr && patient.created_at) {
             if (typeof patient.created_at === 'string') {
               patientDateStr = patient.created_at.split('T')[0]; // Extract YYYY-MM-DD from datetime
             }
           }
-          
+
           // Debug EVERY patient when using today filter to find the issue
           const shouldDebug = dateRange === 'today' || (patient.first_name?.toUpperCase().includes('ASHOK') && patient.last_name?.toUpperCase().includes('KUMAR')) || i < 5;
-          
+
           if (shouldDebug) {
           }
-          
+
           // Validate date format and exclude invalid dates
           if (!patientDateStr) {
             if (shouldDebug) {
@@ -897,7 +906,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
             }
             continue;
           }
-          
+
           // Ensure date is in YYYY-MM-DD format (same validation as patient entry forms)
           const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
           if (!dateRegex.test(patientDateStr)) {
@@ -921,13 +930,13 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
               continue;
             }
           }
-          
+
           // Smart date comparison using standardized YYYY-MM-DD format (same as patient entry)
           let isInRange;
           if (dateRange === 'today') {
             // For today filter, use STRICT exact date matching in YYYY-MM-DD format
             isInRange = patientDateStr === currentStartDate;
-            
+
             // Double check with explicit comparison
             if (shouldDebug) {
             }
@@ -937,14 +946,14 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
           } else {
             // For date ranges (week, month, custom range), use range matching in YYYY-MM-DD format
             isInRange = patientDateStr >= currentStartDate && patientDateStr <= currentEndDate;
-            
+
             if (shouldDebug) {
             }
           }
-          
+
           if (shouldDebug) {
           }
-          
+
           if (isInRange) {
             filtered.push(patient);
             if (shouldDebug) {
@@ -957,33 +966,33 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
             }
           }
         }
-        
+
         patientsData = filtered;
-        
+
         // Show final filtered patients for today filter
         if (dateRange === 'today') {
         }
-        
-        
+
+
         // Debug week filter specifically
         if (dateRange === 'week') {
         }
       } else if (dateRange === 'today') {
       } else {
       }
-      
+
       setPatients(patientsData);
-      
+
       // Force re-sorting after patients are loaded to ensure date-based order is correct
       // This is important when back-dated entries are loaded
-      
+
       // Extract unique tags from patients for filter dropdown
       const uniqueTags = [...new Set(
         patientsData
           .map(p => p.patient_tag)
           .filter(tag => tag && tag.trim() !== '')
       ), 'Community', 'Camp'].sort();
-      
+
       // Debug logging for patient tags
       console.log('🏷️ Patient List Debug - Total patients:', patientsData.length);
       const patientsWithTags = patientsData.filter(p => p.patient_tag && p.patient_tag.trim() !== '');
@@ -1008,7 +1017,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
     // Apply search filter
     if (searchTerm.trim()) {
       const search = searchTerm.toLowerCase();
-      filtered = filtered.filter(patient => 
+      filtered = filtered.filter(patient =>
         patient.first_name.toLowerCase().includes(search) ||
         patient.last_name.toLowerCase().includes(search) ||
         patient.phone.includes(search) ||
@@ -1030,7 +1039,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
     // Apply sorting
     filtered.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
         case 'name':
           comparison = (a.first_name + ' ' + a.last_name).localeCompare(b.first_name + ' ' + b.last_name);
@@ -1051,7 +1060,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
             }
             return new Date(patient.created_at).getTime();
           };
-          
+
           comparison = getPatientSortDate(a) - getPatientSortDate(b);
           break;
         case 'visits':
@@ -1061,7 +1070,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
           comparison = (a.totalSpent || 0) - (b.totalSpent || 0);
           break;
       }
-      
+
       return sortOrder === 'asc' ? comparison : -comparison;
     });
 
@@ -1122,10 +1131,10 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
 
   const handlePrescription = (patient: PatientWithRelations, template: string) => {
     setSelectedPatientForPrescription(patient);
-    
+
     // Check if patient has multiple doctors
     const hasMultipleDoctors = patient.assigned_doctors && patient.assigned_doctors.length > 1;
-    
+
     if (hasMultipleDoctors) {
       // Use multiple prescription generator
       setMultiplePrescriptionType(template as 'valant' | 'vh');
@@ -1163,13 +1172,13 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
 
     try {
       setLoading(true);
-      
+
       // Delete the patient using HospitalService
       await HospitalService.deletePatient(patientId);
-      
+
       toast.success('Patient deleted successfully');
       await loadPatients(); // Reload the patients list
-      
+
     } catch (error: any) {
       toast.error(`Failed to delete patient: ${error.message}`);
     } finally {
@@ -1179,13 +1188,13 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
 
   const exportPatientsToExcel = () => {
     try {
-      
+
       const exportData = filteredPatients.map(patient => {
-        
+
         // Debug registration date formatting
         const regDate = patient.created_at || '';
         const formattedRegDate = formatDate(regDate);
-        
+
         return {
           patient_id: patient.patient_id,
           first_name: patient.first_name,
@@ -1213,7 +1222,7 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
         headers: [
           'Patient ID',
           'First Name',
-          'Last Name', 
+          'Last Name',
           'Phone',
           'Email',
           'Gender',
@@ -1271,42 +1280,42 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
           <p className="text-gray-600">Complete patient management with search, filter, and detailed history</p>
           {dateRange !== 'all' && (
             <div className="mt-3 text-sm text-blue-600 bg-blue-50 px-4 py-2 rounded-full inline-block">
-            📅 Showing patients from: {
-              dateRange === 'today' ? new Date(selectedDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              }) :
-              dateRange === 'custom' ? new Date(startDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              }) :
-              dateRange === 'week' ? `This week (${new Date(startDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              })} - ${new Date(endDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              })})` :
-              `This month (${new Date(startDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              })} - ${new Date(endDate).toLocaleDateString('en-IN', { 
-                timeZone: 'Asia/Kolkata',
-                day: '2-digit',
-                month: '2-digit', 
-                year: 'numeric'
-              })})`
-            }
+              📅 Showing patients from: {
+                dateRange === 'today' ? new Date(selectedDate).toLocaleDateString('en-IN', {
+                  timeZone: 'Asia/Kolkata',
+                  day: '2-digit',
+                  month: '2-digit',
+                  year: 'numeric'
+                }) :
+                  dateRange === 'custom' ? new Date(startDate).toLocaleDateString('en-IN', {
+                    timeZone: 'Asia/Kolkata',
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                  }) :
+                    dateRange === 'week' ? `This week (${new Date(startDate).toLocaleDateString('en-IN', {
+                      timeZone: 'Asia/Kolkata',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })} - ${new Date(endDate).toLocaleDateString('en-IN', {
+                      timeZone: 'Asia/Kolkata',
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric'
+                    })})` :
+                      `This month (${new Date(startDate).toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })} - ${new Date(endDate).toLocaleDateString('en-IN', {
+                        timeZone: 'Asia/Kolkata',
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric'
+                      })})`
+              }
             </div>
           )}
         </div>
@@ -1446,51 +1455,46 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
               <div className="flex gap-2 flex-wrap items-center">
                 <button
                   onClick={() => setDateRange('all')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    dateRange === 'all'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'all'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   All Time
                 </button>
                 <button
                   onClick={() => setDateRange('today')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    dateRange === 'today'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'today'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Today
                 </button>
                 <button
                   onClick={() => setDateRange('week')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    dateRange === 'week'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'week'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   This Week
                 </button>
                 <button
                   onClick={() => setDateRange('month')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    dateRange === 'month'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'month'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   This Month
                 </button>
                 <button
                   onClick={() => setDateRange('custom')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    dateRange === 'custom'
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${dateRange === 'custom'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
+                    }`}
                 >
                   Custom Date
                 </button>
@@ -1534,41 +1538,37 @@ const ComprehensivePatientList: React.FC<ComprehensivePatientListProps> = ({ onN
               <span className="font-medium text-gray-700">Sort by:</span>
               <button
                 onClick={() => handleSort('name')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  sortBy === 'name'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sortBy === 'name'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 Patient Name {getSortIcon('name')}
               </button>
               <button
                 onClick={() => handleSort('date')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  sortBy === 'date'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sortBy === 'date'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 Last Visit {getSortIcon('date')}
               </button>
               <button
                 onClick={() => handleSort('visits')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  sortBy === 'visits'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sortBy === 'visits'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 Visits {getSortIcon('visits')}
               </button>
               <button
                 onClick={() => handleSort('spent')}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                  sortBy === 'spent'
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${sortBy === 'spent'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+                  }`}
               >
                 Total Spent {getSortIcon('spent')}
               </button>
